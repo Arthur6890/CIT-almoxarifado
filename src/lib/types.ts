@@ -1,5 +1,5 @@
 // src/lib/types.ts
-export type { Setor, Item, Movimentacao } from "./db";
+export type { Projeto, Item, Movimentacao } from "./db";
 import type { Movimentacao } from "./db";
 
 export interface MovimentacaoComItem extends Movimentacao {

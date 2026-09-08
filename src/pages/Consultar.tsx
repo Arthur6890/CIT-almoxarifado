@@ -95,7 +95,7 @@ export function Consultar() {
                   Piso/Andar: <strong>{item.piso_andar}</strong>
                 </span>
                 <span>
-                  Setor: <strong>{item.local_setor}</strong>
+                  Setor: <strong>{item.local_projeto}</strong>
                 </span>
                 <span>
                   Organizador: <strong>{item.organizador}</strong>
