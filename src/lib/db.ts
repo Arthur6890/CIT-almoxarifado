@@ -1,5 +1,4 @@
-// src/lib/db.ts
-import Dexie, { type Table } from 'dexie';
+import Dexie, { type Table } from "dexie";
 
 export interface Setor {
   id?: number;
@@ -22,7 +21,7 @@ export interface Item {
 export interface Movimentacao {
   id?: number;
   item_id: number;
-  tipo: 'ENTRADA' | 'SAIDA';
+  tipo: "ENTRADA" | "SAIDA";
   quantidade_antes: number;
   quantidade_depois: number;
   matricula_usuario: string;
@@ -36,52 +35,99 @@ export class Database extends Dexie {
   movimentacoes!: Table<Movimentacao, number>;
 
   constructor() {
-    super('ForgeAlmoxarifadoDB');
+    super("CITAlmoxarifadoDB");
 
     this.version(1).stores({
-      setores: '++id, nome',
-      itens: '++id, nome, setor_id, quantidade, prateleira, piso_andar, local_setor, organizador',
-      movimentacoes: '++id, item_id, tipo, created_at, matricula_usuario'
+      setores: "++id, nome",
+      itens:
+        "++id, nome, setor_id, quantidade, prateleira, piso_andar, local_setor, organizador",
+      movimentacoes: "++id, item_id, tipo, created_at, matricula_usuario",
     });
   }
 }
 
 export const db = new Database();
 
-// Função para popular dados iniciais (opcional)
-export async function seedDatabase() {
+// Popula o banco com dados iniciais de exemplo, apenas na primeira execução
+export async function seedDatabase(): Promise<void> {
   const setoresCount = await db.setores.count();
   if (setoresCount > 0) return;
 
-  // Adicionar setores iniciais
-  const setores = await db.setores.bulkAdd([
-    { nome: 'MADA' },
-    { nome: 'CEMIG' },
-    { nome: 'JMMTECH' }
-  ]);
+  const nomesSetores = ["MADA", "CEMIG", "JMMTECH"];
+  const idsSetores = await db.setores.bulkAdd(
+    nomesSetores.map((nome) => ({ nome })),
+    { allKeys: true },
+  );
+  const [madaId, cemigId, jmmtechId] = idsSetores;
 
-  // Adicionar itens iniciais
-  const cemigId = await db.setores.where('nome').equals('CEMIG').first().then(s => s?.id);
-  if (cemigId) {
-    await db.itens.bulkAdd([
-      {
-        nome: 'Óxido de grafeno - NANO VIEW',
-        setor_id: cemigId,
-        quantidade: 5,
-        prateleira: '2',
-        piso_andar: 'P1',
-        local_setor: 'A',
-        organizador: '73'
-      },
-      {
-        nome: 'Parafuso M8 - Aço Inox',
-        setor_id: cemigId,
-        quantidade: 150,
-        prateleira: '5',
-        piso_andar: 'P2',
-        local_setor: 'B',
-        organizador: '12'
-      }
-    ]);
-  }
+  const agora = new Date();
+
+  await db.itens.bulkAdd([
+    {
+      nome: "Parafuso M8 - Aço Inox",
+      setor_id: madaId,
+      quantidade: 150,
+      prateleira: "5",
+      piso_andar: "P1",
+      local_setor: "A",
+      organizador: "12",
+      created_at: agora,
+      updated_at: agora,
+    },
+    {
+      nome: "Porca M8 - Zincada",
+      setor_id: madaId,
+      quantidade: 300,
+      prateleira: "5",
+      piso_andar: "P1",
+      local_setor: "A",
+      organizador: "13",
+      created_at: agora,
+      updated_at: agora,
+    },
+    {
+      nome: "Óxido de grafeno - NANO VIEW",
+      setor_id: cemigId,
+      quantidade: 5,
+      prateleira: "2",
+      piso_andar: "P1",
+      local_setor: "B",
+      organizador: "73",
+      created_at: agora,
+      updated_at: agora,
+    },
+    {
+      nome: "Resina Epóxi - 500ml",
+      setor_id: cemigId,
+      quantidade: 12,
+      prateleira: "3",
+      piso_andar: "P1",
+      local_setor: "B",
+      organizador: "45",
+      created_at: agora,
+      updated_at: agora,
+    },
+    {
+      nome: "Bateria Li-ion 18650",
+      setor_id: jmmtechId,
+      quantidade: 8,
+      prateleira: "1",
+      piso_andar: "P2",
+      local_setor: "C",
+      organizador: "22",
+      created_at: agora,
+      updated_at: agora,
+    },
+    {
+      nome: "Arduino Mega 2560",
+      setor_id: jmmtechId,
+      quantidade: 3,
+      prateleira: "4",
+      piso_andar: "P2",
+      local_setor: "C",
+      organizador: "31",
+      created_at: agora,
+      updated_at: agora,
+    },
+  ]);
 }

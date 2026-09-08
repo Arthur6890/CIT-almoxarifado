@@ -1,0 +1,87 @@
+@use "./variables" as vars;
+
+.container {
+  min-height: 100vh;
+  background-color: vars.$color-bg;
+  padding: vars.$spacing-lg;
+}
+
+.titulo {
+  color: vars.$color-blue-dark !important;
+  font-weight: 700 !important;
+  margin-bottom: vars.$spacing-lg !important;
+  text-align: center;
+}
+
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: vars.$spacing-md;
+  margin-bottom: vars.$spacing-lg;
+}
+
+.campoSelect {
+  min-width: 220px;
+  flex: 1 1 220px;
+}
+
+.campoBusca {
+  flex: 2 1 320px;
+}
+
+.iconeBusca {
+  color: vars.$color-secondary;
+  margin-right: vars.$spacing-sm;
+}
+
+.mensagemVazia {
+  text-align: center;
+  color: vars.$color-secondary;
+  padding: vars.$spacing-xl 0;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: vars.$spacing-md;
+}
+
+.card {
+  background-color: vars.$color-white;
+  border-radius: vars.$radius-lg;
+  padding: vars.$spacing-md;
+  box-shadow: vars.$shadow-sm;
+  border-left: 4px solid vars.$color-blue-vibrant;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: vars.$spacing-sm;
+  margin-bottom: vars.$spacing-sm;
+}
+
+.cardIcone {
+  color: vars.$color-blue-vibrant;
+  flex-shrink: 0;
+}
+
+.cardNome {
+  font-weight: 700 !important;
+  color: vars.$color-blue-dark;
+}
+
+.cardQuantidade {
+  font-size: 1.5rem !important;
+  font-weight: 700 !important;
+  color: vars.$color-blue-vibrant !important;
+  margin-bottom: vars.$spacing-sm !important;
+}
+
+.cardDetalhes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: vars.$spacing-xs vars.$spacing-sm;
+  font-size: 0.875rem;
+  color: vars.$color-secondary-dark;
+}

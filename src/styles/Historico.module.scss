@@ -1,0 +1,54 @@
+@use "./variables" as vars;
+
+.container {
+  min-height: 100vh;
+  background-color: vars.$color-bg;
+  padding: vars.$spacing-lg;
+}
+
+.titulo {
+  color: vars.$color-blue-dark !important;
+  font-weight: 700 !important;
+  margin-bottom: vars.$spacing-lg !important;
+  text-align: center;
+}
+
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: vars.$spacing-md;
+  margin-bottom: vars.$spacing-lg;
+}
+
+.campoTipo {
+  min-width: 160px;
+}
+
+.tabelaContainer {
+  border-radius: vars.$radius-lg !important;
+  box-shadow: vars.$shadow-sm !important;
+}
+
+.semRegistros {
+  text-align: center !important;
+  color: vars.$color-secondary !important;
+  padding: vars.$spacing-xl 0 !important;
+}
+
+.chipEntrada {
+  background-color: vars.$color-success !important;
+  color: vars.$color-white !important;
+  font-weight: 600 !important;
+}
+
+.chipSaida {
+  background-color: vars.$color-danger !important;
+  color: vars.$color-white !important;
+  font-weight: 600 !important;
+}
+
+.paginacao {
+  display: flex;
+  justify-content: center;
+  margin-top: vars.$spacing-lg;
+}

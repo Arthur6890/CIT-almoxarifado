@@ -1,0 +1,95 @@
+@use "../../styles/variables" as vars;
+
+.button {
+  text-transform: none;
+  font-weight: 600;
+  border-radius: vars.$radius-md;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+// Variantes de cor
+.primary {
+  background-color: vars.$color-blue-vibrant !important;
+  color: vars.$color-white !important;
+
+  &:hover {
+    background-color: vars.$color-blue-medium !important;
+  }
+}
+
+.secondary {
+  background-color: vars.$color-secondary !important;
+  color: vars.$color-white !important;
+
+  &:hover {
+    background-color: vars.$color-secondary-dark !important;
+  }
+}
+
+.success {
+  background-color: vars.$color-success !important;
+  color: vars.$color-white !important;
+
+  &:hover {
+    background-color: vars.$color-success-dark !important;
+  }
+}
+
+.danger {
+  background-color: vars.$color-danger !important;
+  color: vars.$color-white !important;
+
+  &:hover {
+    background-color: vars.$color-danger-dark !important;
+  }
+}
+
+.warning {
+  background-color: vars.$color-warning !important;
+  color: vars.$color-white !important;
+
+  &:hover {
+    background-color: vars.$color-warning-dark !important;
+  }
+}
+
+// Tamanhos
+.small {
+  padding: 8px 16px;
+  font-size: 0.75rem;
+}
+
+.medium {
+  padding: 10px 20px;
+  font-size: 0.875rem;
+}
+
+.large {
+  padding: 12px 28px;
+  font-size: 1rem;
+}
+
+.xl {
+  padding: 16px 36px;
+  font-size: 1.125rem;
+}
+
+.fullWidth {
+  width: 100%;
+}
+
+.iconLeft {
+  display: inline-flex;
+  align-items: center;
+  margin-right: vars.$spacing-sm;
+}
+
+.iconRight {
+  display: inline-flex;
+  align-items: center;
+  margin-left: vars.$spacing-sm;
+}
+
+.spinner {
+  color: inherit !important;
+}

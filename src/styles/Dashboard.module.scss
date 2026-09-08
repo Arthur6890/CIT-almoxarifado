@@ -1,0 +1,95 @@
+@use "./variables" as vars;
+
+.container {
+  min-height: 100vh;
+  background-color: vars.$color-bg;
+  padding: vars.$spacing-lg;
+}
+
+.titulo {
+  color: vars.$color-blue-dark !important;
+  font-weight: 700 !important;
+  margin-bottom: vars.$spacing-lg !important;
+  text-align: center;
+}
+
+.acoes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: vars.$spacing-md;
+  margin-bottom: vars.$spacing-xl;
+}
+
+.recentes {
+  background-color: vars.$color-white;
+  border-radius: vars.$radius-lg;
+  padding: vars.$spacing-lg;
+  box-shadow: vars.$shadow-sm;
+}
+
+.subtitulo {
+  color: vars.$color-blue-medium !important;
+  font-weight: 600 !important;
+  margin-bottom: vars.$spacing-md !important;
+}
+
+.vazio {
+  text-align: center;
+  color: vars.$color-secondary;
+  padding: vars.$spacing-lg 0;
+}
+
+.lista {
+  display: flex;
+  flex-direction: column;
+  gap: vars.$spacing-sm;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: vars.$spacing-md;
+  border-radius: vars.$radius-md;
+  background-color: vars.$color-blue-pale !important;
+  gap: vars.$spacing-md;
+}
+
+.itemInfo {
+  display: flex;
+  align-items: center;
+  gap: vars.$spacing-sm;
+}
+
+.iconeEntrada {
+  color: vars.$color-success;
+  flex-shrink: 0;
+}
+
+.iconeSaida {
+  color: vars.$color-danger;
+  flex-shrink: 0;
+}
+
+.itemNome {
+  font-weight: 600 !important;
+  color: vars.$color-text;
+}
+
+.itemDetalhe {
+  color: vars.$color-secondary-dark !important;
+}
+
+.chipEntrada {
+  background-color: vars.$color-success !important;
+  color: vars.$color-white !important;
+  font-weight: 600 !important;
+  flex-shrink: 0;
+}
+
+.chipSaida {
+  background-color: vars.$color-danger !important;
+  color: vars.$color-white !important;
+  font-weight: 600 !important;
+  flex-shrink: 0;
+}

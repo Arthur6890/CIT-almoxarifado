@@ -1,88 +1,77 @@
-import React, { useState } from "react";
-import { Button } from "@mui/material";
-import type { Movimentacao } from "../lib/db";
-import { Package, Plus, Minus, History, LogIn, LogOut } from "lucide-react";
-import style from "./Dashboard.module.scss";
+import { useNavigate } from "react-router-dom";
+import { ArrowDownCircle, ArrowUpCircle, History, Minus, Package, Plus } from "lucide-react";
+import { Chip, Paper, Typography } from "@mui/material";
+import styles from "../styles/Dashboard.module.scss";
+import { CustomButton } from "../components/button";
+import { useUltimasMovimentacoes } from "../hooks/useItems";
+
+function formatarData(data?: Date): string {
+  if (!data) return "";
+  return new Date(data).toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
 export function Dashboard() {
-  const [ultimasMovimentacoes, setUltimasMovimentacoes] = useState<
-    Movimentacao[]
-  >([]);
-
-  const formatarData = (data?: Date) => {
-    if (!data) return "";
-    return data.toLocaleString("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+  const navigate = useNavigate();
+  const movimentacoes = useUltimasMovimentacoes(5);
 
   return (
-    <main>
-      <h1>Dashboard</h1>
-      <section className={style.dashboard}>
-        <Button variant="contained">
-          <Package /> Consultar Itens
-        </Button>
-        <Button variant="contained">
-          <Plus /> Entrada de Itens
-        </Button>
-        <Button variant="contained">
-          <Minus /> Saída de Itens
-        </Button>
-        <Button variant="contained">
-          <History /> Histórico (Logs)
-        </Button>
+    <main className={styles.container}>
+      <Typography variant="h4" component="h1" className={styles.titulo}>
+        Almoxarifado
+      </Typography>
+
+      <section className={styles.acoes}>
+        <CustomButton variant="primary" size="xl" fullWidth icon={<Package />} onClick={() => navigate("/consultar")}>
+          Consultar Itens
+        </CustomButton>
+        <CustomButton variant="success" size="xl" fullWidth icon={<Plus />} onClick={() => navigate("/entrada")}>
+          Registrar Entrada
+        </CustomButton>
+        <CustomButton variant="danger" size="xl" fullWidth icon={<Minus />} onClick={() => navigate("/saida")}>
+          Registrar Saída
+        </CustomButton>
+        <CustomButton variant="secondary" size="xl" fullWidth icon={<History />} onClick={() => navigate("/historico")}>
+          Histórico
+        </CustomButton>
       </section>
-      <section>
-        {ultimasMovimentacoes.length === 0 ? (
-          <p className="text-gray-400 text-center py-8">
-            Nenhuma movimentação registrada ainda.
-          </p>
+
+      <section className={styles.recentes}>
+        <Typography variant="h6" className={styles.subtitulo}>
+          Últimas Movimentações
+        </Typography>
+
+        {movimentacoes.length === 0 ? (
+          <Typography className={styles.vazio}>Nenhuma movimentação registrada ainda.</Typography>
         ) : (
-          <div className="space-y-3">
-            {ultimasMovimentacoes.map((mov: any) => (
-              <div
-                key={mov.id}
-                className="flex items-center justify-between p-3 bg-[#e9e4ea] rounded-lg hover:bg-[#d5d0d6] transition-colors"
-              >
-                <div className="flex items-center gap-3">
+          <div className={styles.lista}>
+            {movimentacoes.map((mov) => (
+              <Paper key={mov.id} className={styles.item} elevation={0}>
+                <div className={styles.itemInfo}>
                   {mov.tipo === "ENTRADA" ? (
-                    <span className="bg-green-100 text-green-700 p-2 rounded-full">
-                      <Plus size={16} />
-                    </span>
+                    <ArrowDownCircle className={styles.iconeEntrada} />
                   ) : (
-                    <span className="bg-red-100 text-red-700 p-2 rounded-full">
-                      <Minus size={16} />
-                    </span>
+                    <ArrowUpCircle className={styles.iconeSaida} />
                   )}
                   <div>
-                    <p className="font-medium text-[#2b0675]">{mov.itemNome}</p>
-                    <div className="flex items-center gap-4 text-sm text-gray-500">
-                      <span className="flex items-center gap-1">
-                        <LogIn size={12} /> {mov.tipo}
-                      </span>
-                      <span>Mat: {mov.matricula_usuario}</span>
-                      <span>
-                        {mov.quantidade_antes} → {mov.quantidade_depois}
-                      </span>
-                      <span>{formatarData(mov.created_at)}</span>
-                    </div>
+                    <Typography className={styles.itemNome}>{mov.itemNome}</Typography>
+                    <Typography variant="body2" className={styles.itemDetalhe}>
+                      Mat: {mov.matricula_usuario} · {mov.quantidade_antes} → {mov.quantidade_depois} ·{" "}
+                      {formatarData(mov.created_at)}
+                    </Typography>
                   </div>
                 </div>
-                <span
-                  className={`text-xs font-semibold px-2 py-1 rounded-full ${
-                    mov.tipo === "ENTRADA"
-                      ? "bg-green-100 text-green-700"
-                      : "bg-red-100 text-red-700"
-                  }`}
-                >
-                  {mov.tipo === "ENTRADA" ? "+1" : "-1"}
-                </span>
-              </div>
+                <Chip
+                  label={mov.tipo}
+                  size="small"
+                  className={mov.tipo === "ENTRADA" ? styles.chipEntrada : styles.chipSaida}
+                />
+              </Paper>
             ))}
           </div>
         )}

@@ -1,0 +1,20 @@
+@use "./variables" as vars;
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "Roboto", "Segoe UI", Arial, sans-serif;
+  background-color: vars.$color-bg;
+  color: vars.$color-text;
+  -webkit-tap-highlight-color: transparent;
+}
