@@ -40,7 +40,7 @@ export class Database extends Dexie {
     this.version(1).stores({
       projetos: "++id, nome",
       itens:
-        "++id, nome, projeto_id, quantidade, prateleira, piso_andar, local_projeto, organizador, [projeto_id+nome]",
+        "++id, nome, projeto_id, quantidade, prateleira, piso_andar, local_setor, organizador, [projeto_id+nome]",
       movimentacoes: "++id, item_id, tipo, created_at, matricula_usuario",
     });
   }

@@ -5,6 +5,7 @@ import styles from "../styles/Saida.module.scss";
 import { CustomButton } from "../components/button";
 import { ProjetoAutocomplete } from "../components/projeto-autocomplete";
 import { ItemAutocomplete } from "../components/item-autocomplete";
+import { CampoComTooltip } from "../components/campo-tooltip";
 import { useItensPorProjeto, useNomesItensDoProjeto, useProjetos } from "../hooks/useItems";
 import { registrarSaida, resolverIdProjeto } from "../lib/repository";
 import type { SelecaoComOpcaoNova } from "../lib/types";
@@ -20,10 +21,6 @@ export function Saida() {
     useState<SelecaoComOpcaoNova | null>(null);
   const [itemSelecionado, setItemSelecionado] =
     useState<SelecaoComOpcaoNova | null>(null);
-  const [organizador, setOrganizador] = useState("");
-  const [setor, setSetor] = useState("");
-  const [andar, setAndar] = useState("");
-  const [prateleira, setPrateleira] = useState("");
   const [quantidade, setQuantidade] = useState("1");
   const [observacao, setObservacao] = useState("");
   const [enviando, setEnviando] = useState(false);
@@ -41,14 +38,25 @@ export function Saida() {
   );
 
   const buscouItem = !!itemSelecionado?.nome.trim();
-  const itemExistente =
-    itemSelecionado && !itemSelecionado.isNovo
-      ? itensDoProjeto.find(
-          (item) =>
-            item.nome.trim().toLowerCase() ===
-            itemSelecionado.nome.trim().toLowerCase(),
-        )
-      : undefined;
+  // Na tela de Saída o item precisa obrigatoriamente já existir no projeto selecionado
+  // (a opção "Novo Item" fica desabilitada no Autocomplete, ver ItemAutocomplete permitirNovo).
+  const itemExistente = itemSelecionado
+    ? itensDoProjeto.find(
+        (item) =>
+          item.nome.trim().toLowerCase() ===
+          itemSelecionado.nome.trim().toLowerCase(),
+      )
+    : undefined;
+
+  // Campos de localização são sempre somente leitura na Saída: refletem os dados já
+  // cadastrados do item (definidos na tela de Novo Item), nunca são digitados aqui.
+  // Como nunca são editados pelo usuário, não precisam de estado próprio — apenas derivam
+  // diretamente do item selecionado a cada renderização.
+  const organizador = itemExistente?.organizador ?? "";
+  const setor = itemExistente?.local_setor ?? "";
+  const andar = itemExistente?.piso_andar ?? "";
+  const prateleira = itemExistente?.prateleira ?? "";
+
   const quantidadeNumero = Number(quantidade);
   const quantidadeValida =
     Number.isInteger(quantidadeNumero) && quantidadeNumero >= 1;
@@ -60,7 +68,7 @@ export function Saida() {
     !!itemExistente &&
     quantidadeValida &&
     quantidadeNumero > itemExistente.quantidade;
-  const itemInvalido = !!itemSelecionado?.isNovo || (buscouItem && !itemExistente);
+  const itemInvalido = buscouItem && !itemExistente;
 
   const podeRegistrar =
     matricula.trim().length > 0 &&
@@ -82,7 +90,7 @@ export function Saida() {
   }
 
   async function handleRegistrar() {
-    if (!projetoSelecionado || !itemSelecionado) return;
+    if (!projetoSelecionado || !itemSelecionado || !itemExistente) return;
     setEnviando(true);
     try {
       const projetoId = await resolverIdProjeto(projetoSelecionado);
@@ -102,10 +110,6 @@ export function Saida() {
         mensagem: `Saída registrada! Nova quantidade: ${novaQuantidade}`,
       });
       setItemSelecionado(null);
-      setOrganizador("");
-      setSetor("");
-      setAndar("");
-      setPrateleira("");
       setQuantidade("1");
       setObservacao("");
     } catch (erro) {
@@ -126,17 +130,20 @@ export function Saida() {
       </Typography>
 
       <div className={styles.formulario}>
-        <TextField
-          label="Matrícula"
-          value={matricula}
-          onChange={(e) => setMatricula(e.target.value)}
-          required
-          fullWidth
-        />
+        <CampoComTooltip>
+          <TextField
+            label="Matrícula"
+            value={matricula}
+            onChange={(e) => setMatricula(e.target.value)}
+            required
+            fullWidth
+          />
+        </CampoComTooltip>
 
         <ProjetoAutocomplete
           value={projetoSelecionado}
           onChange={handleProjetoChange}
+          permitirNovo={false}
         />
 
         <ItemAutocomplete
@@ -144,58 +151,65 @@ export function Saida() {
           value={itemSelecionado}
           onChange={setItemSelecionado}
           disabled={!projetoSelecionado?.nome.trim()}
+          permitirNovo={false}
         />
 
-        <TextField
-          label="Organizador do item"
-          value={organizador}
-          onChange={(e) => setOrganizador(e.target.value)}
-          required
-          fullWidth
-        />
-        <TextField
-          label="Setor do item"
-          value={setor}
-          onChange={(e) => setSetor(e.target.value)}
-          required
-          fullWidth
-        />
-        <TextField
-          label="Andar do item"
-          value={andar}
-          onChange={(e) => setAndar(e.target.value)}
-          required
-          fullWidth
-        />
-        <TextField
-          label="Prateleira do item"
-          value={prateleira}
-          onChange={(e) => setPrateleira(e.target.value)}
-          required
-          fullWidth
-        />
-        <TextField
-          label="Quantidade"
-          type="number"
-          value={quantidade}
-          onChange={(e) => setQuantidade(e.target.value)}
-          required
-          fullWidth
-          error={!quantidadeValida}
-          helperText={
-            !quantidadeValida
-              ? "Informe um número inteiro maior ou igual a 1"
-              : undefined
-          }
-          slotProps={{ htmlInput: { min: 1, step: 1 } }}
-        />
+        <CampoComTooltip>
+          <TextField
+            label="Organizador do item"
+            value={organizador}
+            required
+            fullWidth
+            slotProps={{ input: { readOnly: true } }}
+          />
+        </CampoComTooltip>
+        <CampoComTooltip>
+          <TextField
+            label="Setor do item"
+            value={setor}
+            required
+            fullWidth
+            slotProps={{ input: { readOnly: true } }}
+          />
+        </CampoComTooltip>
+        <CampoComTooltip>
+          <TextField
+            label="Andar do item"
+            value={andar}
+            required
+            fullWidth
+            slotProps={{ input: { readOnly: true } }}
+          />
+        </CampoComTooltip>
+        <CampoComTooltip>
+          <TextField
+            label="Prateleira do item"
+            value={prateleira}
+            required
+            fullWidth
+            slotProps={{ input: { readOnly: true } }}
+          />
+        </CampoComTooltip>
+        <CampoComTooltip>
+          <TextField
+            label="Quantidade"
+            type="number"
+            value={quantidade}
+            onChange={(e) => setQuantidade(e.target.value)}
+            required
+            fullWidth
+            error={!quantidadeValida}
+            helperText={
+              !quantidadeValida
+                ? "Informe um número inteiro maior ou igual a 1"
+                : undefined
+            }
+            slotProps={{ htmlInput: { min: 1, step: 1 } }}
+          />
+        </CampoComTooltip>
 
         {buscouItem &&
-          (itemSelecionado?.isNovo ? (
-            <Typography className={styles.previaNaoEncontrado}>
-              Não é possível registrar saída de um item novo.
-            </Typography>
-          ) : itemExistente ? (
+          (itemExistente ? (
             semEstoque ? (
               <Typography className={styles.previaSemEstoque}>
                 Item sem estoque disponível
@@ -220,14 +234,16 @@ export function Saida() {
             </Typography>
           ))}
 
-        <TextField
-          label="Observação (opcional)"
-          value={observacao}
-          onChange={(e) => setObservacao(e.target.value)}
-          fullWidth
-          multiline
-          minRows={2}
-        />
+        <CampoComTooltip>
+          <TextField
+            label="Observação (opcional)"
+            value={observacao}
+            onChange={(e) => setObservacao(e.target.value)}
+            fullWidth
+            multiline
+            minRows={2}
+          />
+        </CampoComTooltip>
 
         <CustomButton
           variant="danger"

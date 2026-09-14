@@ -1,0 +1,17 @@
+.wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.campo {
+  flex: 1;
+  min-width: 0;
+}
+
+.icone {
+  cursor: help;
+  opacity: 0.6;
+  flex-shrink: 0;
+  color: inherit;
+}

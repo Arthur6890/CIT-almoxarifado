@@ -5,6 +5,7 @@ import styles from "../styles/Entrada.module.scss";
 import { CustomButton } from "../components/button";
 import { ProjetoAutocomplete } from "../components/projeto-autocomplete";
 import { ItemAutocomplete } from "../components/item-autocomplete";
+import { CampoComTooltip } from "../components/campo-tooltip";
 import { useItensPorProjeto, useNomesItensDoProjeto, useProjetos } from "../hooks/useItems";
 import { registrarEntrada, resolverIdProjeto } from "../lib/repository";
 import type { SelecaoComOpcaoNova } from "../lib/types";
@@ -24,6 +25,10 @@ export function Entrada() {
   const [setor, setSetor] = useState("");
   const [andar, setAndar] = useState("");
   const [prateleira, setPrateleira] = useState("");
+  // Guarda o id do último item existente sincronizado com os campos de localização acima,
+  // para o padrão de "ajustar estado durante a renderização" abaixo (evita usar useEffect).
+  const [ultimoItemIdSincronizado, setUltimoItemIdSincronizado] =
+    useState<number | undefined>(undefined);
   const [quantidade, setQuantidade] = useState("1");
   const [observacao, setObservacao] = useState("");
   const [enviando, setEnviando] = useState(false);
@@ -57,6 +62,30 @@ export function Entrada() {
   const quantidadeAtual = itemExistente?.quantidade ?? 0;
   const quantidadeNova = quantidadeAtual + (quantidadeValida ? quantidadeNumero : 0);
 
+  // Quando um item já cadastrado é selecionado, os campos de localização são preenchidos
+  // automaticamente com os dados do item e ficam somente leitura (ver `camposLocalizacaoEditaveis`).
+  // Ao criar um item novo pela tela de Entrada, esses campos continuam editáveis, pois é
+  // aqui que os dados são definidos pela primeira vez para esse item.
+  // Ajusta o estado durante a própria renderização (em vez de um useEffect) sempre que o item
+  // existente selecionado mudar — padrão recomendado pelo React para sincronizar estado com uma
+  // "chave" que muda, evitando o re-render extra de um efeito.
+  if (itemExistente?.id !== ultimoItemIdSincronizado) {
+    setUltimoItemIdSincronizado(itemExistente?.id);
+    if (itemExistente) {
+      setOrganizador(itemExistente.organizador);
+      setSetor(itemExistente.local_setor);
+      setAndar(itemExistente.piso_andar);
+      setPrateleira(itemExistente.prateleira);
+    } else {
+      setOrganizador("");
+      setSetor("");
+      setAndar("");
+      setPrateleira("");
+    }
+  }
+
+  const camposLocalizacaoEditaveis = !itemExistente;
+
   const podeRegistrar =
     matricula.trim().length > 0 &&
     !!projetoSelecionado?.nome.trim() &&
@@ -72,6 +101,20 @@ export function Entrada() {
     setProjetoSelecionado(valor);
     // Ao trocar de projeto, o item selecionado deixa de fazer sentido (itens são por projeto)
     setItemSelecionado(null);
+    setOrganizador("");
+    setSetor("");
+    setAndar("");
+    setPrateleira("");
+  }
+
+  function handleItemChange(valor: SelecaoComOpcaoNova | null) {
+    setItemSelecionado(valor);
+    if (!valor) {
+      setOrganizador("");
+      setSetor("");
+      setAndar("");
+      setPrateleira("");
+    }
   }
 
   async function handleRegistrar() {
@@ -121,13 +164,15 @@ export function Entrada() {
       </Typography>
 
       <div className={styles.formulario}>
-        <TextField
-          label="Matrícula"
-          value={matricula}
-          onChange={(e) => setMatricula(e.target.value)}
-          required
-          fullWidth
-        />
+        <CampoComTooltip>
+          <TextField
+            label="Matrícula"
+            value={matricula}
+            onChange={(e) => setMatricula(e.target.value)}
+            required
+            fullWidth
+          />
+        </CampoComTooltip>
 
         <ProjetoAutocomplete
           value={projetoSelecionado}
@@ -137,53 +182,67 @@ export function Entrada() {
         <ItemAutocomplete
           itensExistentes={nomesItensDoProjeto}
           value={itemSelecionado}
-          onChange={setItemSelecionado}
+          onChange={handleItemChange}
           disabled={!projetoSelecionado?.nome.trim()}
         />
 
-        <TextField
-          label="Organizador do item"
-          value={organizador}
-          onChange={(e) => setOrganizador(e.target.value)}
-          required
-          fullWidth
-        />
-        <TextField
-          label="Setor do item"
-          value={setor}
-          onChange={(e) => setSetor(e.target.value)}
-          required
-          fullWidth
-        />
-        <TextField
-          label="Andar do item"
-          value={andar}
-          onChange={(e) => setAndar(e.target.value)}
-          required
-          fullWidth
-        />
-        <TextField
-          label="Prateleira do item"
-          value={prateleira}
-          onChange={(e) => setPrateleira(e.target.value)}
-          required
-          fullWidth
-        />
-        <TextField
-          label="Quantidade"
-          type="number"
-          value={quantidade}
-          onChange={(e) => setQuantidade(e.target.value)}
-          required
-          fullWidth
-          error={!quantidadeValida}
-          helperText={
-            !quantidadeValida
-              ? "Informe um número inteiro maior ou igual a 1"
-              : undefined
-          }
-          slotProps={{ htmlInput: { min: 1, step: 1 } }}
-        />
+        <CampoComTooltip>
+          <TextField
+            label="Organizador do item"
+            value={organizador}
+            onChange={(e) => setOrganizador(e.target.value)}
+            required
+            fullWidth
+            slotProps={{ input: { readOnly: !camposLocalizacaoEditaveis } }}
+          />
+        </CampoComTooltip>
+        <CampoComTooltip>
+          <TextField
+            label="Setor do item"
+            value={setor}
+            onChange={(e) => setSetor(e.target.value)}
+            required
+            fullWidth
+            slotProps={{ input: { readOnly: !camposLocalizacaoEditaveis } }}
+          />
+        </CampoComTooltip>
+        <CampoComTooltip>
+          <TextField
+            label="Andar do item"
+            value={andar}
+            onChange={(e) => setAndar(e.target.value)}
+            required
+            fullWidth
+            slotProps={{ input: { readOnly: !camposLocalizacaoEditaveis } }}
+          />
+        </CampoComTooltip>
+        <CampoComTooltip>
+          <TextField
+            label="Prateleira do item"
+            value={prateleira}
+            onChange={(e) => setPrateleira(e.target.value)}
+            required
+            fullWidth
+            slotProps={{ input: { readOnly: !camposLocalizacaoEditaveis } }}
+          />
+        </CampoComTooltip>
+        <CampoComTooltip>
+          <TextField
+            label="Quantidade"
+            type="number"
+            value={quantidade}
+            onChange={(e) => setQuantidade(e.target.value)}
+            required
+            fullWidth
+            error={!quantidadeValida}
+            helperText={
+              !quantidadeValida
+                ? "Informe um número inteiro maior ou igual a 1"
+                : undefined
+            }
+            slotProps={{ htmlInput: { min: 1, step: 1 } }}
+          />
+        </CampoComTooltip>
 
         {buscouItem && !itemSelecionado?.isNovo && (
           <Typography
@@ -202,14 +261,16 @@ export function Entrada() {
           </Typography>
         )}
 
-        <TextField
-          label="Observação (opcional)"
-          value={observacao}
-          onChange={(e) => setObservacao(e.target.value)}
-          fullWidth
-          multiline
-          minRows={2}
-        />
+        <CampoComTooltip>
+          <TextField
+            label="Observação (opcional)"
+            value={observacao}
+            onChange={(e) => setObservacao(e.target.value)}
+            fullWidth
+            multiline
+            minRows={2}
+          />
+        </CampoComTooltip>
 
         <CustomButton
           variant="success"
