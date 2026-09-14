@@ -1,0 +1,37 @@
+@use "./variables" as vars;
+
+.container {
+  min-height: 100vh;
+  background-color: vars.$color-bg;
+  padding: vars.$spacing-lg;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.titulo {
+  color: vars.$color-blue-dark !important;
+  font-weight: 700 !important;
+  margin-bottom: vars.$spacing-lg !important;
+  text-align: center;
+}
+
+.formulario {
+  width: 100%;
+  max-width: 480px;
+  background-color: vars.$color-white;
+  border-radius: vars.$radius-lg;
+  padding: vars.$spacing-lg;
+  box-shadow: vars.$shadow-sm;
+  display: flex;
+  flex-direction: column;
+  gap: vars.$spacing-md;
+}
+
+.aviso {
+  background-color: #fdecea;
+  color: vars.$color-danger;
+  border-radius: vars.$radius-md;
+  padding: vars.$spacing-md;
+  font-weight: 600;
+}

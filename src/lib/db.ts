@@ -12,7 +12,7 @@ export interface Item {
   quantidade: number;
   prateleira: string;
   piso_andar: string;
-  local_projeto: string;
+  local_setor: string;
   organizador: string;
   created_at?: Date;
   updated_at?: Date;
@@ -43,6 +43,14 @@ export class Database extends Dexie {
         "++id, nome, projeto_id, quantidade, prateleira, piso_andar, local_projeto, organizador",
       movimentacoes: "++id, item_id, tipo, created_at, matricula_usuario",
     });
+
+    // v2: chave de negócio de um item é nome + projeto_id (um mesmo nome pode existir em projetos diferentes)
+    this.version(2).stores({
+      projetos: "++id, nome",
+      itens:
+        "++id, nome, projeto_id, quantidade, prateleira, piso_andar, local_setor, organizador, [projeto_id+nome]",
+      movimentacoes: "++id, item_id, tipo, created_at, matricula_usuario",
+    });
   }
 }
 
@@ -69,7 +77,7 @@ export async function seedDatabase(): Promise<void> {
       quantidade: 150,
       prateleira: "5",
       piso_andar: "P1",
-      local_projeto: "A",
+      local_setor: "A",
       organizador: "12",
       created_at: agora,
       updated_at: agora,
@@ -80,7 +88,7 @@ export async function seedDatabase(): Promise<void> {
       quantidade: 300,
       prateleira: "5",
       piso_andar: "P1",
-      local_projeto: "A",
+      local_setor: "A",
       organizador: "13",
       created_at: agora,
       updated_at: agora,
@@ -91,7 +99,7 @@ export async function seedDatabase(): Promise<void> {
       quantidade: 5,
       prateleira: "2",
       piso_andar: "P1",
-      local_projeto: "B",
+      local_setor: "B",
       organizador: "73",
       created_at: agora,
       updated_at: agora,
@@ -102,7 +110,7 @@ export async function seedDatabase(): Promise<void> {
       quantidade: 12,
       prateleira: "3",
       piso_andar: "P1",
-      local_projeto: "B",
+      local_setor: "B",
       organizador: "45",
       created_at: agora,
       updated_at: agora,
@@ -113,7 +121,7 @@ export async function seedDatabase(): Promise<void> {
       quantidade: 8,
       prateleira: "1",
       piso_andar: "P2",
-      local_projeto: "C",
+      local_setor: "C",
       organizador: "22",
       created_at: agora,
       updated_at: agora,
@@ -124,7 +132,7 @@ export async function seedDatabase(): Promise<void> {
       quantidade: 3,
       prateleira: "4",
       piso_andar: "P2",
-      local_projeto: "C",
+      local_setor: "C",
       organizador: "31",
       created_at: agora,
       updated_at: agora,

@@ -22,6 +22,8 @@ export function Consultar() {
 
   const projetos = useProjetos();
   const itens = useItensPorProjeto(projetoId, busca);
+  const nomeProjetoSelecionado =
+    projetos.find((projeto) => projeto.id === projetoId)?.nome ?? "";
 
   function handleProjetoChange(evento: SelectChangeEvent<number | "">) {
     const valor = evento.target.value;
@@ -89,13 +91,16 @@ export function Consultar() {
               </Typography>
               <div className={styles.cardDetalhes}>
                 <span>
+                  Projeto: <strong>{nomeProjetoSelecionado}</strong>
+                </span>
+                <span>
                   Prateleira: <strong>{item.prateleira}</strong>
                 </span>
                 <span>
                   Piso/Andar: <strong>{item.piso_andar}</strong>
                 </span>
                 <span>
-                  Projeto: <strong>{item.local_projeto}</strong>
+                  Setor: <strong>{item.local_setor}</strong>
                 </span>
                 <span>
                   Organizador: <strong>{item.organizador}</strong>

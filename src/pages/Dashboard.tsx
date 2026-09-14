@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowDownCircle, ArrowUpCircle, History, Minus, Package, Plus } from "lucide-react";
+import { ArrowDownCircle, ArrowUpCircle, History, Minus, Package, PackagePlus, Plus } from "lucide-react";
 import { Chip, Paper, Typography } from "@mui/material";
 import styles from "../styles/Dashboard.module.scss";
 import { CustomButton } from "../components/button";
@@ -39,6 +39,9 @@ export function Dashboard() {
         <CustomButton variant="secondary" size="xl" fullWidth icon={<History />} onClick={() => navigate("/historico")}>
           Histórico
         </CustomButton>
+        <CustomButton variant="warning" size="xl" fullWidth icon={<PackagePlus />} onClick={() => navigate("/novo-item")}>
+          Adicionar Novo Item
+        </CustomButton>
       </section>
 
       <section className={styles.recentes}>
@@ -59,7 +62,10 @@ export function Dashboard() {
                     <ArrowUpCircle className={styles.iconeSaida} />
                   )}
                   <div>
-                    <Typography className={styles.itemNome}>{mov.itemNome}</Typography>
+                    <Typography className={styles.itemNome}>
+                      {mov.itemNome}{" "}
+                      <span className={styles.itemProjeto}>({mov.projetoNome})</span>
+                    </Typography>
                     <Typography variant="body2" className={styles.itemDetalhe}>
                       Mat: {mov.matricula_usuario} · {mov.quantidade_antes} → {mov.quantidade_depois} ·{" "}
                       {formatarData(mov.created_at)}

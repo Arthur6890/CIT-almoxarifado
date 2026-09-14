@@ -1,12 +1,23 @@
 import { useState } from "react";
-import { Alert, Snackbar, TextField, Typography } from "@mui/material";
+import {
+  Alert,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Snackbar,
+  TextField,
+  Typography,
+} from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import styles from "../styles/Entrada.module.scss";
+import styles from "../styles/NovoItem.module.scss";
 import { CustomButton } from "../components/button";
 import { ProjetoAutocomplete } from "../components/projeto-autocomplete";
 import { ItemAutocomplete } from "../components/item-autocomplete";
-import { useItensPorProjeto, useNomesItensDoProjeto, useProjetos } from "../hooks/useItems";
-import { registrarEntrada, resolverIdProjeto } from "../lib/repository";
+import { useNomesItensDoProjeto, useProjetos } from "../hooks/useItems";
+import { criarItem, resolverIdProjeto } from "../lib/repository";
 import type { SelecaoComOpcaoNova } from "../lib/types";
 
 interface Feedback {
@@ -14,8 +25,7 @@ interface Feedback {
   mensagem: string;
 }
 
-export function Entrada() {
-  const [matricula, setMatricula] = useState("");
+export function NovoItem() {
   const [projetoSelecionado, setProjetoSelecionado] =
     useState<SelecaoComOpcaoNova | null>(null);
   const [itemSelecionado, setItemSelecionado] =
@@ -24,8 +34,10 @@ export function Entrada() {
   const [setor, setSetor] = useState("");
   const [andar, setAndar] = useState("");
   const [prateleira, setPrateleira] = useState("");
-  const [quantidade, setQuantidade] = useState("1");
+  const [quantidadeInicial, setQuantidadeInicial] = useState("1");
+  const [matricula, setMatricula] = useState("");
   const [observacao, setObservacao] = useState("");
+  const [confirmacaoAberta, setConfirmacaoAberta] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const navigate = useNavigate();
@@ -35,79 +47,61 @@ export function Entrada() {
     projetoSelecionado && !projetoSelecionado.isNovo
       ? (projetos.find((p) => p.nome === projetoSelecionado.nome) ?? null)
       : null;
-  const itensDoProjeto = useItensPorProjeto(projetoExistente?.id ?? "", "");
   const nomesItensDoProjeto = useNomesItensDoProjeto(
     projetoExistente?.id ?? null,
   );
 
-  const quantidadeNumero = Number(quantidade);
+  const quantidadeNumero = Number(quantidadeInicial);
   const quantidadeValida =
     Number.isInteger(quantidadeNumero) && quantidadeNumero >= 1;
 
-  const buscouItem = !!itemSelecionado?.nome.trim();
-  const itemExistente =
-    itemSelecionado && !itemSelecionado.isNovo
-      ? itensDoProjeto.find(
-          (item) =>
-            item.nome.trim().toLowerCase() ===
-            itemSelecionado.nome.trim().toLowerCase(),
-        )
-      : undefined;
-  const itemJaExiste = !!itemExistente;
-  const quantidadeAtual = itemExistente?.quantidade ?? 0;
-  const quantidadeNova = quantidadeAtual + (quantidadeValida ? quantidadeNumero : 0);
+  const itemJaExiste =
+    !!itemSelecionado &&
+    !itemSelecionado.isNovo &&
+    nomesItensDoProjeto.some(
+      (nome) => nome.toLowerCase() === itemSelecionado.nome.trim().toLowerCase(),
+    );
 
   const podeRegistrar =
-    matricula.trim().length > 0 &&
-    !!projetoSelecionado?.nome.trim() &&
     !!itemSelecionado?.nome.trim() &&
+    !itemJaExiste &&
+    !!projetoSelecionado?.nome.trim() &&
     organizador.trim().length > 0 &&
     setor.trim().length > 0 &&
     andar.trim().length > 0 &&
     prateleira.trim().length > 0 &&
     quantidadeValida &&
+    matricula.trim().length > 0 &&
     !enviando;
 
   function handleProjetoChange(valor: SelecaoComOpcaoNova | null) {
     setProjetoSelecionado(valor);
-    // Ao trocar de projeto, o item selecionado deixa de fazer sentido (itens são por projeto)
     setItemSelecionado(null);
   }
 
-  async function handleRegistrar() {
+  async function handleConfirmarRegistro() {
     if (!projetoSelecionado || !itemSelecionado) return;
+    setConfirmacaoAberta(false);
     setEnviando(true);
     try {
       const projetoId = await resolverIdProjeto(projetoSelecionado);
-      const resultado = await registrarEntrada({
-        nomeItem: itemSelecionado.nome,
+      await criarItem({
+        nome: itemSelecionado.nome,
         projetoId,
-        quantidade: quantidadeNumero,
         organizador: organizador.trim(),
         setor: setor.trim(),
         andar: andar.trim(),
         prateleira: prateleira.trim(),
+        quantidadeInicial: quantidadeNumero,
         matricula: matricula.trim(),
         observacao: observacao.trim() || undefined,
       });
-      setFeedback({
-        tipo: "success",
-        mensagem: resultado.itemCriado
-          ? `Item criado e entrada registrada! Quantidade: ${resultado.quantidade}`
-          : `Entrada registrada! Nova quantidade: ${resultado.quantidade}`,
-      });
-      setItemSelecionado(null);
-      setOrganizador("");
-      setSetor("");
-      setAndar("");
-      setPrateleira("");
-      setQuantidade("1");
-      setObservacao("");
+      setFeedback({ tipo: "success", mensagem: "Item adicionado ao estoque!" });
+      setTimeout(() => navigate("/consultar"), 1200);
     } catch (erro) {
       setFeedback({
         tipo: "error",
-        mensagem:
-          erro instanceof Error ? erro.message : "Erro ao registrar entrada",
+        mensagem: erro instanceof Error ? erro.message : "Erro ao criar item",
       });
     } finally {
       setEnviando(false);
@@ -117,18 +111,11 @@ export function Entrada() {
   return (
     <main className={styles.container}>
       <Typography variant="h4" component="h1" className={styles.titulo}>
-        Registrar Entrada
+        Adicionar Novo Item
       </Typography>
 
       <div className={styles.formulario}>
-        <TextField
-          label="Matrícula"
-          value={matricula}
-          onChange={(e) => setMatricula(e.target.value)}
-          required
-          fullWidth
-        />
-
+        {/* Projeto vem antes do item porque a lista de sugestões do item depende do projeto escolhido */}
         <ProjetoAutocomplete
           value={projetoSelecionado}
           onChange={handleProjetoChange}
@@ -140,6 +127,13 @@ export function Entrada() {
           onChange={setItemSelecionado}
           disabled={!projetoSelecionado?.nome.trim()}
         />
+
+        {itemJaExiste && (
+          <Typography className={styles.aviso}>
+            Já existe um item com esse nome neste projeto. Use a tela de Entrada
+            para adicionar quantidade a ele.
+          </Typography>
+        )}
 
         <TextField
           label="Organizador do item"
@@ -170,38 +164,23 @@ export function Entrada() {
           fullWidth
         />
         <TextField
-          label="Quantidade"
+          label="Quantidade inicial"
           type="number"
-          value={quantidade}
-          onChange={(e) => setQuantidade(e.target.value)}
+          value={quantidadeInicial}
+          onChange={(e) => setQuantidadeInicial(e.target.value)}
           required
           fullWidth
           error={!quantidadeValida}
-          helperText={
-            !quantidadeValida
-              ? "Informe um número inteiro maior ou igual a 1"
-              : undefined
-          }
+          helperText={!quantidadeValida ? "Informe um número inteiro maior ou igual a 1" : undefined}
           slotProps={{ htmlInput: { min: 1, step: 1 } }}
         />
-
-        {buscouItem && !itemSelecionado?.isNovo && (
-          <Typography
-            className={
-              itemJaExiste ? styles.previaEncontrado : styles.previaNaoEncontrado
-            }
-          >
-            {itemJaExiste
-              ? `Item existente: quantidade atual ${quantidadeAtual}, nova quantidade ${quantidadeNova}.`
-              : "Item não encontrado neste projeto: escolha \"+ Novo Item\" para cadastrá-lo."}
-          </Typography>
-        )}
-        {itemSelecionado?.isNovo && (
-          <Typography className={styles.previaEncontrado}>
-            Novo item será criado com quantidade inicial {quantidadeValida ? quantidadeNumero : "—"}.
-          </Typography>
-        )}
-
+        <TextField
+          label="Matrícula do usuário"
+          value={matricula}
+          onChange={(e) => setMatricula(e.target.value)}
+          required
+          fullWidth
+        />
         <TextField
           label="Observação (opcional)"
           value={observacao}
@@ -217,12 +196,29 @@ export function Entrada() {
           fullWidth
           loading={enviando}
           disabled={!podeRegistrar}
-          onClick={handleRegistrar}
+          onClick={() => setConfirmacaoAberta(true)}
         >
-          Registrar Entrada
+          Adicionar Item
         </CustomButton>
         <CustomButton onClick={() => navigate("/")}>voltar</CustomButton>
       </div>
+
+      <Dialog open={confirmacaoAberta} onClose={() => setConfirmacaoAberta(false)}>
+        <DialogTitle>Confirmar novo item</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Deseja realmente adicionar o item "{itemSelecionado?.nome}" ao
+            projeto "{projetoSelecionado?.nome}" com quantidade inicial{" "}
+            {quantidadeInicial}?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmacaoAberta(false)}>Cancelar</Button>
+          <Button onClick={handleConfirmarRegistro} variant="contained" autoFocus>
+            Confirmar
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Snackbar
         open={!!feedback}

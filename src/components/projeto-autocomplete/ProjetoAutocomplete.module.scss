@@ -1,0 +1,11 @@
+@use "../../styles/variables" as vars;
+
+.campoNovo {
+  display: flex;
+  align-items: flex-start;
+  gap: vars.$spacing-sm;
+}
+
+.botaoCancelar {
+  margin-top: vars.$spacing-sm !important;
+}

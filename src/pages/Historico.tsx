@@ -18,7 +18,7 @@ import {
 } from "@mui/material";
 import type { SelectChangeEvent } from "@mui/material";
 import styles from "../styles/Historico.module.scss";
-import { useHistorico } from "../hooks/useItems";
+import { useHistorico, useProjetos } from "../hooks/useItems";
 import type { TipoMovimentacaoFiltro } from "../lib/types";
 import { useNavigate } from "react-router-dom";
 import { CustomButton } from "../components/button";
@@ -42,14 +42,17 @@ export function Historico() {
   const [dataFinal, setDataFinal] = useState("");
   const [tipo, setTipo] = useState<TipoMovimentacaoFiltro>("TODOS");
   const [matricula, setMatricula] = useState("");
+  const [projetoId, setProjetoId] = useState<number | "">("");
   const [pagina, setPagina] = useState(1);
   const navigate = useNavigate();
 
+  const projetos = useProjetos();
   const movimentacoes = useHistorico({
     dataInicial,
     dataFinal,
     tipo,
     matricula,
+    projetoId,
   });
 
   const totalPaginas = Math.max(
@@ -61,6 +64,12 @@ export function Historico() {
 
   function handleTipoChange(evento: SelectChangeEvent<TipoMovimentacaoFiltro>) {
     setTipo(evento.target.value as TipoMovimentacaoFiltro);
+    setPagina(1);
+  }
+
+  function handleProjetoChange(evento: SelectChangeEvent<number | "">) {
+    const valor = evento.target.value;
+    setProjetoId(valor === "" ? "" : Number(valor));
     setPagina(1);
   }
 
@@ -112,6 +121,22 @@ export function Historico() {
             setPagina(1);
           }}
         />
+        <FormControl className={styles.campoTipo}>
+          <InputLabel id="projeto-label">Projeto</InputLabel>
+          <Select
+            labelId="projeto-label"
+            label="Projeto"
+            value={projetoId}
+            onChange={handleProjetoChange}
+          >
+            <MenuItem value="">Todos</MenuItem>
+            {projetos.map((projeto) => (
+              <MenuItem key={projeto.id} value={projeto.id}>
+                {projeto.nome}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
       </div>
 
       <TableContainer component={Paper} className={styles.tabelaContainer}>
@@ -121,6 +146,7 @@ export function Historico() {
               <TableCell>Data/Hora</TableCell>
               <TableCell>Tipo</TableCell>
               <TableCell>Item</TableCell>
+              <TableCell>Projeto</TableCell>
               <TableCell>Matrícula</TableCell>
               <TableCell>Quantidade</TableCell>
               <TableCell>Observação</TableCell>
@@ -129,7 +155,7 @@ export function Historico() {
           <TableBody>
             {itensDaPagina.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className={styles.semRegistros}>
+                <TableCell colSpan={7} className={styles.semRegistros}>
                   Nenhuma movimentação encontrada.
                 </TableCell>
               </TableRow>
@@ -149,6 +175,7 @@ export function Historico() {
                     />
                   </TableCell>
                   <TableCell>{mov.itemNome}</TableCell>
+                  <TableCell>{mov.projetoNome}</TableCell>
                   <TableCell>{mov.matricula_usuario}</TableCell>
                   <TableCell>
                     {mov.quantidade_antes} → {mov.quantidade_depois}

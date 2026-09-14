@@ -35,6 +35,13 @@ export function useItensPorProjeto(
   );
 }
 
+// Nomes dos itens já cadastrados em um projeto, usado para alimentar o Autocomplete
+// de "Nome do item" nas telas de Entrada, Saída e Novo Item.
+export function useNomesItensDoProjeto(projetoId: number | null): string[] {
+  const itens = useItensPorProjeto(projetoId ?? "", "");
+  return itens.map((item) => item.nome);
+}
+
 export function useUltimasMovimentacoes(limite = 5): MovimentacaoComItem[] {
   return (
     useLiveQuery(() => listarUltimasMovimentacoes(limite), [limite], []) ?? []
@@ -45,7 +52,13 @@ export function useHistorico(filtros: HistoricoFiltros): MovimentacaoComItem[] {
   return (
     useLiveQuery(
       () => listarHistorico(filtros),
-      [filtros.dataInicial, filtros.dataFinal, filtros.tipo, filtros.matricula],
+      [
+        filtros.dataInicial,
+        filtros.dataFinal,
+        filtros.tipo,
+        filtros.matricula,
+        filtros.projetoId,
+      ],
       [],
     ) ?? []
   );
