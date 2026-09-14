@@ -9,23 +9,23 @@ import {
 } from "@mui/material";
 import type { SelectChangeEvent } from "@mui/material";
 import { Package, Search } from "lucide-react";
-import { useItensPorSetor, useSetores } from "../hooks/useItems";
+import { useItensPorProjeto, useProjetos } from "../hooks/useItems";
 import styles from "../styles/Consultar.module.scss";
 import { CustomButton } from "../components/button";
 import { useNavigate } from "react-router-dom";
 import { Spacer } from "../components/spacer";
 
 export function Consultar() {
-  const [setorId, setSetorId] = useState<number | "">("");
+  const [projetoId, setProjetoId] = useState<number | "">("");
   const [busca, setBusca] = useState("");
   const navigate = useNavigate();
 
-  const setores = useSetores();
-  const itens = useItensPorSetor(setorId, busca);
+  const projetos = useProjetos();
+  const itens = useItensPorProjeto(projetoId, busca);
 
-  function handleSetorChange(evento: SelectChangeEvent<number | "">) {
+  function handleProjetoChange(evento: SelectChangeEvent<number | "">) {
     const valor = evento.target.value;
-    setSetorId(valor === "" ? "" : Number(valor));
+    setProjetoId(valor === "" ? "" : Number(valor));
   }
 
   return (
@@ -36,16 +36,16 @@ export function Consultar() {
 
       <div className={styles.filtros}>
         <FormControl className={styles.campoSelect}>
-          <InputLabel id="setor-label">Setor</InputLabel>
+          <InputLabel id="projeto-label">Projeto</InputLabel>
           <Select
-            labelId="setor-label"
-            label="Setor"
-            value={setorId}
-            onChange={handleSetorChange}
+            labelId="projeto-label"
+            label="Projeto"
+            value={projetoId}
+            onChange={handleProjetoChange}
           >
-            {setores.map((setor) => (
-              <MenuItem key={setor.id} value={setor.id}>
-                {setor.nome}
+            {projetos.map((projeto) => (
+              <MenuItem key={projeto.id} value={projeto.id}>
+                {projeto.nome}
               </MenuItem>
             ))}
           </Select>
@@ -57,7 +57,7 @@ export function Consultar() {
           placeholder="Digite o nome do item..."
           value={busca}
           onChange={(evento) => setBusca(evento.target.value)}
-          disabled={setorId === ""}
+          disabled={projetoId === ""}
           slotProps={{
             input: {
               startAdornment: (
@@ -68,9 +68,9 @@ export function Consultar() {
         />
       </div>
 
-      {setorId === "" ? (
+      {projetoId === "" ? (
         <Typography className={styles.mensagemVazia}>
-          Selecione um setor para consultar
+          Selecione um projeto para consultar
         </Typography>
       ) : itens.length === 0 ? (
         <Typography className={styles.mensagemVazia}>
@@ -95,7 +95,7 @@ export function Consultar() {
                   Piso/Andar: <strong>{item.piso_andar}</strong>
                 </span>
                 <span>
-                  Setor: <strong>{item.local_projeto}</strong>
+                  Projeto: <strong>{item.local_projeto}</strong>
                 </span>
                 <span>
                   Organizador: <strong>{item.organizador}</strong>

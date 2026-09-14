@@ -2,23 +2,25 @@
 import { db, type Item, type Movimentacao, type Projeto } from "./db";
 import type { HistoricoFiltros, MovimentacaoComItem } from "./types";
 
-// ----------------- Setores -----------------
+// ----------------- Projetos -----------------
 
-export async function listarSetores(): Promise<Projeto[]> {
+export async function listarProjetos(): Promise<Projeto[]> {
   return db.projetos.orderBy("nome").toArray();
 }
 
 // ----------------- Itens -----------------
 
-export async function listarItensPorSetor(setorId: number): Promise<Item[]> {
-  return db.itens.where("setor_id").equals(setorId).toArray();
+export async function listarItensPorProjeto(
+  projetoId: number,
+): Promise<Item[]> {
+  return db.itens.where("projeto_id").equals(projetoId).toArray();
 }
 
 export async function buscarItensPorTermo(
-  setorId: number,
+  projetoId: number,
   termo: string,
 ): Promise<Item[]> {
-  const itens = await listarItensPorSetor(setorId);
+  const itens = await listarItensPorProjeto(projetoId);
   const termoNormalizado = termo.trim().toLowerCase();
   if (!termoNormalizado) return itens;
   return itens.filter((item) =>

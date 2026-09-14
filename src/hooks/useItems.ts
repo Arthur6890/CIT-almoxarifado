@@ -13,20 +13,23 @@ import type {
   Projeto,
 } from "../lib/types";
 
-export function useSetores(): Projeto[] {
+export function useProjetos(): Projeto[] {
   return (
     useLiveQuery(() => db.projetos.orderBy("nome").toArray(), [], []) ?? []
   );
 }
 
-export function useItensPorSetor(setorId: number | "", termo: string): Item[] {
+export function useItensPorProjeto(
+  projetoId: number | "",
+  termo: string,
+): Item[] {
   return (
     useLiveQuery(
       async () => {
-        if (setorId === "") return [];
-        return buscarItensPorTermo(setorId, termo);
+        if (projetoId === "") return [];
+        return buscarItensPorTermo(projetoId, termo);
       },
-      [setorId, termo],
+      [projetoId, termo],
       [],
     ) ?? []
   );
