@@ -1,5 +1,13 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowDownCircle, ArrowUpCircle, History, Minus, Package, PackagePlus, Plus } from "lucide-react";
+import {
+  ArrowDownCircle,
+  ArrowUpCircle,
+  History,
+  Minus,
+  Package,
+  PackagePlus,
+  Plus,
+} from "lucide-react";
 import { Chip, Paper, Typography } from "@mui/material";
 import styles from "../styles/Dashboard.module.scss";
 import { CustomButton } from "../components/button";
@@ -27,20 +35,50 @@ export function Dashboard() {
       </Typography>
 
       <section className={styles.acoes}>
-        <CustomButton variant="primary" size="xl" fullWidth icon={<Package />} onClick={() => navigate("/consultar")}>
+        <CustomButton
+          variant="primary"
+          size="xl"
+          fullWidth
+          icon={<Package />}
+          onClick={() => navigate("/consultar")}
+        >
           Consultar Itens
         </CustomButton>
-        <CustomButton variant="success" size="xl" fullWidth icon={<Plus />} onClick={() => navigate("/entrada")}>
+        <CustomButton
+          variant="success"
+          size="xl"
+          fullWidth
+          icon={<Plus />}
+          onClick={() => navigate("/entrada")}
+        >
           Registrar Entrada
         </CustomButton>
-        <CustomButton variant="danger" size="xl" fullWidth icon={<Minus />} onClick={() => navigate("/saida")}>
+        <CustomButton
+          variant="danger"
+          size="xl"
+          fullWidth
+          icon={<Minus />}
+          onClick={() => navigate("/saida")}
+        >
           Registrar Saída
         </CustomButton>
-        <CustomButton variant="secondary" size="xl" fullWidth icon={<History />} onClick={() => navigate("/historico")}>
-          Histórico
-        </CustomButton>
-        <CustomButton variant="warning" size="xl" fullWidth icon={<PackagePlus />} onClick={() => navigate("/novo-item")}>
+        <CustomButton
+          variant="warning"
+          size="xl"
+          fullWidth
+          icon={<PackagePlus />}
+          onClick={() => navigate("/novo-item")}
+        >
           Adicionar Novo Item
+        </CustomButton>
+        <CustomButton
+          variant="secondary"
+          size="xl"
+          fullWidth
+          icon={<History />}
+          onClick={() => navigate("/historico")}
+        >
+          Histórico
         </CustomButton>
       </section>
 
@@ -50,7 +88,9 @@ export function Dashboard() {
         </Typography>
 
         {movimentacoes.length === 0 ? (
-          <Typography className={styles.vazio}>Nenhuma movimentação registrada ainda.</Typography>
+          <Typography className={styles.vazio}>
+            Nenhuma movimentação registrada ainda.
+          </Typography>
         ) : (
           <div className={styles.lista}>
             {movimentacoes.map((mov) => (
@@ -64,18 +104,24 @@ export function Dashboard() {
                   <div>
                     <Typography className={styles.itemNome}>
                       {mov.itemNome}{" "}
-                      <span className={styles.itemProjeto}>({mov.projetoNome})</span>
+                      <span className={styles.itemProjeto}>
+                        ({mov.projetoNome})
+                      </span>
                     </Typography>
                     <Typography variant="body2" className={styles.itemDetalhe}>
-                      Mat: {mov.matricula_usuario} · {mov.quantidade_antes} → {mov.quantidade_depois} ·{" "}
-                      {formatarData(mov.created_at)}
+                      Mat: {mov.matricula_usuario} · {mov.quantidade_antes} →{" "}
+                      {mov.quantidade_depois} · {formatarData(mov.created_at)}
                     </Typography>
                   </div>
                 </div>
                 <Chip
                   label={mov.tipo}
                   size="small"
-                  className={mov.tipo === "ENTRADA" ? styles.chipEntrada : styles.chipSaida}
+                  className={
+                    mov.tipo === "ENTRADA"
+                      ? styles.chipEntrada
+                      : styles.chipSaida
+                  }
                 />
               </Paper>
             ))}
