@@ -40,15 +40,7 @@ export class Database extends Dexie {
     this.version(1).stores({
       projetos: "++id, nome",
       itens:
-        "++id, nome, projeto_id, quantidade, prateleira, piso_andar, local_projeto, organizador",
-      movimentacoes: "++id, item_id, tipo, created_at, matricula_usuario",
-    });
-
-    // v2: chave de negócio de um item é nome + projeto_id (um mesmo nome pode existir em projetos diferentes)
-    this.version(2).stores({
-      projetos: "++id, nome",
-      itens:
-        "++id, nome, projeto_id, quantidade, prateleira, piso_andar, local_setor, organizador, [projeto_id+nome]",
+        "++id, nome, projeto_id, quantidade, prateleira, piso_andar, local_projeto, organizador, [projeto_id+nome]",
       movimentacoes: "++id, item_id, tipo, created_at, matricula_usuario",
     });
   }
