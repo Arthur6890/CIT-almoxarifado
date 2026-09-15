@@ -13,6 +13,12 @@
   text-align: center;
 }
 
+.acoesTopo {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: vars.$spacing-md;
+}
+
 .filtros {
   display: flex;
   flex-wrap: wrap;
@@ -51,4 +57,32 @@
   display: flex;
   justify-content: center;
   margin-top: vars.$spacing-lg;
+}
+
+// Conteúdo exclusivo da versão impressa/PDF (resumo de filtros + tabela completa sem
+// paginação). Fica oculto na tela normal e só aparece quando a página é impressa.
+.somenteImpressao {
+  display: none;
+}
+
+@media print {
+  .container {
+    background-color: vars.$color-white;
+    padding: 0;
+  }
+
+  .escondeImpressao {
+    display: none !important;
+  }
+
+  .somenteImpressao {
+    display: block !important;
+    margin-bottom: vars.$spacing-md;
+    color: vars.$color-text;
+  }
+
+  .tabelaContainer,
+  .somenteImpressao {
+    box-shadow: none !important;
+  }
 }
