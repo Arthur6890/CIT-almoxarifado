@@ -1,4 +1,5 @@
 import Dexie, { type Table } from "dexie";
+import { items as itensBrutos, type ItemImportado } from "./items";
 
 export interface Projeto {
   id?: number;
@@ -48,86 +49,102 @@ export class Database extends Dexie {
 
 export const db = new Database();
 
-// Popula o banco com dados iniciais de exemplo, apenas na primeira execução
+// Correções conhecidas de nome (erros de digitação identificados na planilha de origem):
+// linhas com esses nomes são tratadas como o mesmo item que o nome do lado direito.
+// Adicione aqui outras variações que forem identificadas futuramente.
+export const APELIDOS_NOME_ITEM: Record<string, string> = {
+  "disco de corte 115x1x22,23": "Disco de corte 115x1x22,23mm",
+};
+
+export function nomeCanonicoItem(nomeBruto: string): string {
+  const chave = nomeBruto.trim().toLowerCase();
+  return APELIDOS_NOME_ITEM[chave] ?? nomeBruto.trim();
+}
+
+export interface ItemAgregado {
+  nome: string;
+  projetoNome: string;
+  quantidade: number;
+  prateleira: string;
+  piso_andar: string;
+  local_setor: string;
+  organizador: string;
+}
+
+// Agrupa as linhas brutas de items.ts por nome + projeto, que é a chave de identidade de um
+// item no app. A planilha de origem tem várias linhas para o mesmo item (uma por entrada de
+// estoque ao longo do tempo); aqui elas viram um único item com a quantidade somada, usando a
+// localização (prateleira/piso/setor/organizador) da linha mais recente — como a ordem de
+// items.ts segue a ordem cronológica da planilha original, a mais recente é a última do grupo.
+// Itens sem projeto associado (projeto_id vazio) ficam de fora: precisam de um projeto
+// definido manualmente antes de entrar no estoque.
+// Recebe a lista bruta por parâmetro (padrão: items.ts) para poder ser testada com dados
+// sintéticos, sem depender do conteúdo real de items.ts.
+export function agregarItensImportados(
+  linhasBrutas: readonly ItemImportado[] = itensBrutos,
+): ItemAgregado[] {
+  const porChave = new Map<string, ItemAgregado>();
+
+  for (const bruto of linhasBrutas) {
+    if (!bruto.projeto_id) continue;
+
+    const nome = nomeCanonicoItem(bruto.nome);
+    const chave = `${nome.toLowerCase()}||${bruto.projeto_id.toLowerCase()}`;
+    const existente = porChave.get(chave);
+
+    if (existente) {
+      existente.quantidade += bruto.quantidade;
+      existente.prateleira = bruto.prateleira;
+      existente.piso_andar = bruto.piso_andar;
+      existente.local_setor = bruto.local_setor;
+      existente.organizador = bruto.organizador;
+    } else {
+      porChave.set(chave, {
+        nome,
+        projetoNome: bruto.projeto_id,
+        quantidade: bruto.quantidade,
+        prateleira: bruto.prateleira,
+        piso_andar: bruto.piso_andar,
+        local_setor: bruto.local_setor,
+        organizador: bruto.organizador,
+      });
+    }
+  }
+
+  return [...porChave.values()];
+}
+
+// Popula o banco com os itens importados de items.ts, apenas na primeira execução
 export async function seedDatabase(): Promise<void> {
   const projetosCount = await db.projetos.count();
   if (projetosCount > 0) return;
 
-  const nomesprojetos = ["MADA", "CEMIG", "JMMTECH"];
-  const idsprojetos = await db.projetos.bulkAdd(
-    nomesprojetos.map((nome) => ({ nome })),
+  const itensAgregados = agregarItensImportados();
+
+  const nomesProjetos = [
+    ...new Set(itensAgregados.map((item) => item.projetoNome)),
+  ];
+  const idsProjetos = await db.projetos.bulkAdd(
+    nomesProjetos.map((nome) => ({ nome })),
     { allKeys: true },
   );
-  const [madaId, cemigId, jmmtechId] = idsprojetos;
+  const idProjetoPorNome = new Map(
+    nomesProjetos.map((nome, indice) => [nome, idsProjetos[indice]]),
+  );
 
   const agora = new Date();
 
-  await db.itens.bulkAdd([
-    {
-      nome: "Parafuso M8 - Aço Inox",
-      projeto_id: madaId,
-      quantidade: 150,
-      prateleira: "5",
-      piso_andar: "P1",
-      local_setor: "A",
-      organizador: "12",
+  await db.itens.bulkAdd(
+    itensAgregados.map((item) => ({
+      nome: item.nome,
+      projeto_id: idProjetoPorNome.get(item.projetoNome)!,
+      quantidade: item.quantidade,
+      prateleira: item.prateleira,
+      piso_andar: item.piso_andar,
+      local_setor: item.local_setor,
+      organizador: item.organizador,
       created_at: agora,
       updated_at: agora,
-    },
-    {
-      nome: "Porca M8 - Zincada",
-      projeto_id: madaId,
-      quantidade: 300,
-      prateleira: "5",
-      piso_andar: "P1",
-      local_setor: "A",
-      organizador: "13",
-      created_at: agora,
-      updated_at: agora,
-    },
-    {
-      nome: "Óxido de grafeno - NANO VIEW",
-      projeto_id: cemigId,
-      quantidade: 5,
-      prateleira: "2",
-      piso_andar: "P1",
-      local_setor: "B",
-      organizador: "73",
-      created_at: agora,
-      updated_at: agora,
-    },
-    {
-      nome: "Resina Epóxi - 500ml",
-      projeto_id: cemigId,
-      quantidade: 12,
-      prateleira: "3",
-      piso_andar: "P1",
-      local_setor: "B",
-      organizador: "45",
-      created_at: agora,
-      updated_at: agora,
-    },
-    {
-      nome: "Bateria Li-ion 18650",
-      projeto_id: jmmtechId,
-      quantidade: 8,
-      prateleira: "1",
-      piso_andar: "P2",
-      local_setor: "C",
-      organizador: "22",
-      created_at: agora,
-      updated_at: agora,
-    },
-    {
-      nome: "Arduino Mega 2560",
-      projeto_id: jmmtechId,
-      quantidade: 3,
-      prateleira: "4",
-      piso_andar: "P2",
-      local_setor: "C",
-      organizador: "31",
-      created_at: agora,
-      updated_at: agora,
-    },
-  ]);
+    })),
+  );
 }
