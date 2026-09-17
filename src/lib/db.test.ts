@@ -1,3 +1,4 @@
+import Dexie from "dexie";
 import { beforeEach, describe, expect, it } from "vitest";
 import { limparBanco } from "../test/dbHelpers";
 import {
@@ -6,8 +7,11 @@ import {
   nomeCanonicoItem,
   seedDatabase,
 } from "./db";
+import { listarHistorico } from "./repository";
 import { items as itensReais } from "./items";
 import type { ItemImportado } from "./items";
+
+const NOME_BANCO = "CITAlmoxarifadoDB";
 
 beforeEach(async () => {
   await limparBanco();
@@ -217,5 +221,91 @@ describe("seedDatabase", () => {
       expect(chaves.has(chave)).toBe(false);
       chaves.add(chave);
     }
+  });
+
+  it("popula os funcionários a partir de funcionarios.ts", async () => {
+    await seedDatabase();
+    const funcionarios = await db.funcionarios.toArray();
+    expect(funcionarios.length).toBeGreaterThan(0);
+    expect(funcionarios.some((f) => f.eh_almoxarife)).toBe(true);
+    expect(funcionarios.some((f) => f.matricula === undefined)).toBe(true);
+  });
+
+  it("não popula funcionários de novo se o banco já tiver funcionários", async () => {
+    await seedDatabase();
+    const totalAntes = await db.funcionarios.count();
+
+    await seedDatabase();
+    const totalDepois = await db.funcionarios.count();
+
+    expect(totalDepois).toBe(totalAntes);
+  });
+
+  it("popula funcionários mesmo quando projetos já existiam antes (upgrade de banco antigo)", async () => {
+    await db.projetos.add({ nome: "Já existia" });
+    expect(await db.funcionarios.count()).toBe(0);
+
+    await seedDatabase();
+
+    expect(await db.funcionarios.count()).toBeGreaterThan(0);
+  });
+});
+
+describe("migração de schema v1 -> v2 (adição da tabela de funcionários)", () => {
+  it("abre sem erros um banco criado só na v1 e preserva os dados antigos com fallback de exibição", async () => {
+    // Fecha e apaga o banco para simular, a partir do zero, alguém que já usava o app antes
+    // de a tabela de funcionários existir (schema v1: só matricula_usuario como texto).
+    await db.close();
+    await Dexie.delete(NOME_BANCO);
+
+    const bancoAntigo = new Dexie(NOME_BANCO);
+    bancoAntigo.version(1).stores({
+      projetos: "++id, nome",
+      itens:
+        "++id, nome, projeto_id, quantidade, prateleira, piso_andar, local_setor, organizador, [projeto_id+nome]",
+      movimentacoes: "++id, item_id, tipo, created_at, matricula_usuario",
+    });
+    await bancoAntigo.open();
+
+    const projetoId = await bancoAntigo.table("projetos").add({ nome: "Projeto Legado" });
+    const itemId = await bancoAntigo.table("itens").add({
+      nome: "Item Legado",
+      projeto_id: projetoId,
+      quantidade: 5,
+      prateleira: "1",
+      piso_andar: "P1",
+      local_setor: "A",
+      organizador: "1",
+    });
+    await bancoAntigo.table("movimentacoes").add({
+      item_id: itemId,
+      tipo: "ENTRADA",
+      quantidade_antes: 0,
+      quantidade_depois: 5,
+      matricula_usuario: "999",
+      created_at: new Date("2025-01-01T10:00:00"),
+    });
+    bancoAntigo.close();
+
+    // Reabre com o schema atual (db.ts declara v1 e v2): o Dexie deve migrar sozinho, sem
+    // precisar de nenhum .upgrade() customizado, já que a v2 só adiciona uma tabela nova e
+    // novos campos opcionais em movimentacoes.
+    await expect(db.open()).resolves.toBeDefined();
+
+    const projetos = await db.projetos.toArray();
+    expect(projetos).toHaveLength(1);
+    expect(projetos[0].nome).toBe("Projeto Legado");
+
+    const movimentacoes = await db.movimentacoes.toArray();
+    expect(movimentacoes).toHaveLength(1);
+    expect(movimentacoes[0].matricula_usuario).toBe("999");
+    expect(movimentacoes[0].funcionario_id).toBeUndefined();
+
+    // A tabela de funcionários existe (vazia) e o app continua funcionando: o Histórico exibe
+    // o registro antigo usando o texto legado de matrícula como fallback (ver anexarDetalhes).
+    expect(await db.funcionarios.count()).toBe(0);
+    const historico = await listarHistorico({});
+    expect(historico[0].funcionarioNome).toBe("999");
+    expect(historico[0].itemNome).toBe("Item Legado");
   });
 });

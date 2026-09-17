@@ -15,6 +15,7 @@ import { useNavigate } from "react-router-dom";
 import styles from "../styles/NovoItem.module.scss";
 import { CustomButton } from "../components/button";
 import { ProjetoAutocomplete } from "../components/projeto-autocomplete";
+import { FuncionarioAutocomplete } from "../components/funcionario-autocomplete";
 import { CampoComTooltip } from "../components/campo-tooltip";
 import { useNomesItensDoProjeto, useProjetos } from "../hooks/useItems";
 import { criarItem, resolverIdProjeto } from "../lib/repository";
@@ -34,7 +35,8 @@ export function NovoItem() {
   const [andar, setAndar] = useState("");
   const [prateleira, setPrateleira] = useState("");
   const [quantidadeInicial, setQuantidadeInicial] = useState("1");
-  const [matricula, setMatricula] = useState("");
+  const [funcionarioId, setFuncionarioId] = useState<number | "">("");
+  const [almoxarifeId, setAlmoxarifeId] = useState<number | "">("");
   const [observacao, setObservacao] = useState("");
   const [confirmacaoAberta, setConfirmacaoAberta] = useState(false);
   const [enviando, setEnviando] = useState(false);
@@ -70,7 +72,8 @@ export function NovoItem() {
     andar.trim().length > 0 &&
     prateleira.trim().length > 0 &&
     quantidadeValida &&
-    matricula.trim().length > 0 &&
+    funcionarioId !== "" &&
+    almoxarifeId !== "" &&
     !enviando;
 
   function handleProjetoChange(valor: SelecaoComOpcaoNova | null) {
@@ -78,7 +81,8 @@ export function NovoItem() {
   }
 
   async function handleConfirmarRegistro() {
-    if (!projetoSelecionado || !nomeItem.trim()) return;
+    if (!projetoSelecionado || !nomeItem.trim() || funcionarioId === "" || almoxarifeId === "")
+      return;
     setConfirmacaoAberta(false);
     setEnviando(true);
     try {
@@ -91,7 +95,8 @@ export function NovoItem() {
         andar: andar.trim(),
         prateleira: prateleira.trim(),
         quantidadeInicial: quantidadeNumero,
-        matricula: matricula.trim(),
+        funcionarioId,
+        almoxarifeId,
         observacao: observacao.trim() || undefined,
       });
       setFeedback({ tipo: "success", mensagem: "Item adicionado ao estoque!" });
@@ -143,9 +148,10 @@ export function NovoItem() {
           <TextField
             label="Organizador do item"
             value={organizador}
-            onChange={(e) => setOrganizador(e.target.value)}
+            onChange={(e) => setOrganizador(e.target.value.replace(/\D/g, ""))}
             required
             fullWidth
+            slotProps={{ htmlInput: { inputMode: "numeric", pattern: "[0-9]*" } }}
           />
         </CampoComTooltip>
         <CampoComTooltip>
@@ -170,9 +176,10 @@ export function NovoItem() {
           <TextField
             label="Prateleira do item"
             value={prateleira}
-            onChange={(e) => setPrateleira(e.target.value)}
+            onChange={(e) => setPrateleira(e.target.value.replace(/\D/g, ""))}
             required
             fullWidth
+            slotProps={{ htmlInput: { inputMode: "numeric", pattern: "[0-9]*" } }}
           />
         </CampoComTooltip>
         <CampoComTooltip>
@@ -188,15 +195,17 @@ export function NovoItem() {
             slotProps={{ htmlInput: { min: 1, step: 1 } }}
           />
         </CampoComTooltip>
-        <CampoComTooltip>
-          <TextField
-            label="Matrícula do usuário"
-            value={matricula}
-            onChange={(e) => setMatricula(e.target.value)}
-            required
-            fullWidth
-          />
-        </CampoComTooltip>
+        <FuncionarioAutocomplete
+          label="Matrícula do usuário"
+          value={funcionarioId}
+          onChange={setFuncionarioId}
+        />
+        <FuncionarioAutocomplete
+          label="Almoxarife responsável"
+          value={almoxarifeId}
+          onChange={setAlmoxarifeId}
+          apenasAlmoxarifes
+        />
         <CampoComTooltip>
           <TextField
             label="Observação (opcional)"

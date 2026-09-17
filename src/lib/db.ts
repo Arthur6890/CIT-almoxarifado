@@ -1,5 +1,6 @@
 import Dexie, { type Table } from "dexie";
 import { items as itensBrutos, type ItemImportado } from "./items";
+import { funcionarios as funcionariosBrutos } from "./funcionarios";
 
 export interface Projeto {
   id?: number;
@@ -19,21 +20,45 @@ export interface Item {
   updated_at?: Date;
 }
 
+// Bolsistas não têm matrícula (matricula fica undefined nesse caso).
+export interface Funcionario {
+  id?: number;
+  nome: string;
+  matricula?: string;
+  eh_almoxarife: boolean;
+}
+
+export type TipoMovimentacao = "ENTRADA" | "SAIDA" | "RETORNO";
+
+// Só é relevante para tipo "SAIDA": PENDENTE_RETORNO enquanto o item não voltou,
+// SEM_RETORNO quando a saída já nasce como definitiva, RETORNADO quando o retorno é registrado.
+export type StatusSaida = "PENDENTE_RETORNO" | "SEM_RETORNO" | "RETORNADO";
+
 export interface Movimentacao {
   id?: number;
   item_id: number;
-  tipo: "ENTRADA" | "SAIDA";
+  tipo: TipoMovimentacao;
   quantidade_antes: number;
   quantidade_depois: number;
-  matricula_usuario: string;
+  // Funcionário que retirou/recebeu o item (ou, no caso de RETORNO, quem devolveu).
+  funcionario_id: number;
+  // Almoxarife responsável por processar o registro.
+  almoxarife_id: number;
+  status?: StatusSaida;
+  // Presente só em movimentações do tipo RETORNO: aponta para a SAIDA original que fechou.
+  movimentacao_origem_id?: number;
   observacao?: string;
   created_at?: Date;
+  // Campo legado (versão anterior do schema, antes de referenciar funcionário por id).
+  // Mantido só para não perder o dado em registros antigos; não é mais escrito por código novo.
+  matricula_usuario?: string;
 }
 
 export class Database extends Dexie {
   projetos!: Table<Projeto, number>;
   itens!: Table<Item, number>;
   movimentacoes!: Table<Movimentacao, number>;
+  funcionarios!: Table<Funcionario, number>;
 
   constructor() {
     super("CITAlmoxarifadoDB");
@@ -43,6 +68,19 @@ export class Database extends Dexie {
       itens:
         "++id, nome, projeto_id, quantidade, prateleira, piso_andar, local_setor, organizador, [projeto_id+nome]",
       movimentacoes: "++id, item_id, tipo, created_at, matricula_usuario",
+    });
+
+    // v2: adiciona o cadastro de funcionários e passa a referenciar quem fez/processou cada
+    // movimentação por id (funcionario_id/almoxarife_id) em vez de gravar a matrícula como texto.
+    // Registros antigos continuam legíveis (o campo `matricula_usuario` permanece nos dados,
+    // mesmo fora do índice) e são exibidos com um fallback — ver anexarFuncionarios em repository.ts.
+    this.version(2).stores({
+      projetos: "++id, nome",
+      itens:
+        "++id, nome, projeto_id, quantidade, prateleira, piso_andar, local_setor, organizador, [projeto_id+nome]",
+      movimentacoes:
+        "++id, item_id, tipo, created_at, funcionario_id, almoxarife_id, status, movimentacao_origem_id",
+      funcionarios: "++id, nome, matricula, eh_almoxarife",
     });
   }
 }
@@ -116,6 +154,11 @@ export function agregarItensImportados(
 
 // Popula o banco com os itens importados de items.ts, apenas na primeira execução
 export async function seedDatabase(): Promise<void> {
+  await seedProjetosEItens();
+  await seedFuncionarios();
+}
+
+async function seedProjetosEItens(): Promise<void> {
   const projetosCount = await db.projetos.count();
   if (projetosCount > 0) return;
 
@@ -145,6 +188,22 @@ export async function seedDatabase(): Promise<void> {
       organizador: item.organizador,
       created_at: agora,
       updated_at: agora,
+    })),
+  );
+}
+
+// Guardado separadamente do seed de projetos/itens: quem já tinha o banco criado antes da
+// tabela de funcionários existir precisa ganhar o seed de funcionários mesmo com projetos
+// já populados (senão o early-return acima nunca deixaria isso rodar para esses usuários).
+async function seedFuncionarios(): Promise<void> {
+  const funcionariosCount = await db.funcionarios.count();
+  if (funcionariosCount > 0) return;
+
+  await db.funcionarios.bulkAdd(
+    funcionariosBrutos.map((funcionario) => ({
+      nome: funcionario.nome.trim(),
+      matricula: funcionario.matricula,
+      eh_almoxarife: funcionario.eh_almoxarife,
     })),
   );
 }

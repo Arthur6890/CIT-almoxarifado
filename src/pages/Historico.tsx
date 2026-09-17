@@ -20,12 +20,42 @@ import type { SelectChangeEvent } from "@mui/material";
 import { FileDown } from "lucide-react";
 import styles from "../styles/Historico.module.scss";
 import { useHistorico, useProjetos } from "../hooks/useItems";
-import type { MovimentacaoComItem, TipoMovimentacaoFiltro } from "../lib/types";
-import { useNavigate } from "react-router-dom";
+import type {
+  MovimentacaoComItem,
+  StatusSaidaFiltro,
+  TipoMovimentacaoFiltro,
+} from "../lib/types";
+import { useLocation, useNavigate } from "react-router-dom";
 import { CustomButton } from "../components/button";
 import { Spacer } from "../components/spacer";
 
+// Estado de navegação opcional (ex: vindo do indicador "pendente de retorno" em Consultar
+// ou do indicador de Retornos Pendentes na Dashboard), usado para abrir o Histórico já com
+// alguns filtros pré-aplicados.
+interface FiltrosIniciais {
+  projetoId?: number;
+  status?: StatusSaidaFiltro;
+}
+
 const ITENS_POR_PAGINA = 10;
+
+const ROTULO_STATUS: Record<string, string> = {
+  PENDENTE_RETORNO: "Pendente Retorno",
+  SEM_RETORNO: "Sem Retorno",
+  RETORNADO: "Retornado",
+};
+
+const CLASSE_STATUS: Record<string, string> = {
+  PENDENTE_RETORNO: styles.statusPendente,
+  SEM_RETORNO: styles.statusSemRetorno,
+  RETORNADO: styles.statusRetornado,
+};
+
+const CLASSE_TIPO: Record<string, string> = {
+  ENTRADA: styles.chipEntrada,
+  SAIDA: styles.chipSaida,
+  RETORNO: styles.chipRetorno,
+};
 
 function formatarData(data?: Date): string {
   if (!data) return "";
@@ -45,20 +75,29 @@ function formatarDataFiltro(data: string): string {
 }
 
 export function Historico() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const filtrosIniciais = (location.state as FiltrosIniciais | null) ?? null;
+
   const [dataInicial, setDataInicial] = useState("");
   const [dataFinal, setDataFinal] = useState("");
   const [tipo, setTipo] = useState<TipoMovimentacaoFiltro>("TODOS");
-  const [matricula, setMatricula] = useState("");
-  const [projetoId, setProjetoId] = useState<number | "">("");
+  const [status, setStatus] = useState<StatusSaidaFiltro>(
+    filtrosIniciais?.status ?? "TODOS",
+  );
+  const [funcionario, setFuncionario] = useState("");
+  const [projetoId, setProjetoId] = useState<number | "">(
+    filtrosIniciais?.projetoId ?? "",
+  );
   const [pagina, setPagina] = useState(1);
-  const navigate = useNavigate();
 
   const projetos = useProjetos();
   const movimentacoes = useHistorico({
     dataInicial,
     dataFinal,
     tipo,
-    matricula,
+    status,
+    funcionario,
     projetoId,
   });
 
@@ -71,6 +110,11 @@ export function Historico() {
 
   function handleTipoChange(evento: SelectChangeEvent<TipoMovimentacaoFiltro>) {
     setTipo(evento.target.value as TipoMovimentacaoFiltro);
+    setPagina(1);
+  }
+
+  function handleStatusChange(evento: SelectChangeEvent<StatusSaidaFiltro>) {
+    setStatus(evento.target.value as StatusSaidaFiltro);
     setPagina(1);
   }
 
@@ -87,9 +131,10 @@ export function Historico() {
     if (dataInicial) partes.push(`De ${formatarDataFiltro(dataInicial)}`);
     if (dataFinal) partes.push(`até ${formatarDataFiltro(dataFinal)}`);
     if (tipo !== "TODOS") {
-      partes.push(`Tipo: ${tipo === "ENTRADA" ? "Entrada" : "Saída"}`);
+      partes.push(`Tipo: ${tipo === "ENTRADA" ? "Entrada" : tipo === "SAIDA" ? "Saída" : "Retorno"}`);
     }
-    if (matricula) partes.push(`Matrícula: ${matricula}`);
+    if (status !== "TODOS") partes.push(`Status: ${ROTULO_STATUS[status]}`);
+    if (funcionario) partes.push(`Funcionário: ${funcionario}`);
     if (projetoId !== "") {
       const projeto = projetos.find((p) => p.id === projetoId);
       if (projeto) partes.push(`Projeto: ${projeto.nome}`);
@@ -109,15 +154,23 @@ export function Historico() {
       <TableRow key={mov.id}>
         <TableCell>{formatarData(mov.created_at)}</TableCell>
         <TableCell>
-          <Chip
-            label={mov.tipo}
-            size="small"
-            className={mov.tipo === "ENTRADA" ? styles.chipEntrada : styles.chipSaida}
-          />
+          <Chip label={mov.tipo} size="small" className={CLASSE_TIPO[mov.tipo]} />
+        </TableCell>
+        <TableCell>
+          {mov.status ? (
+            <Chip
+              label={ROTULO_STATUS[mov.status]}
+              size="small"
+              className={CLASSE_STATUS[mov.status]}
+            />
+          ) : (
+            "—"
+          )}
         </TableCell>
         <TableCell>{mov.itemNome}</TableCell>
         <TableCell>{mov.projetoNome}</TableCell>
-        <TableCell>{mov.matricula_usuario}</TableCell>
+        <TableCell>{mov.funcionarioNome}</TableCell>
+        <TableCell>{mov.almoxarifeNome}</TableCell>
         <TableCell>
           {mov.quantidade_antes} → {mov.quantidade_depois}
         </TableCell>
@@ -184,13 +237,29 @@ export function Historico() {
             <MenuItem value="TODOS">Todos</MenuItem>
             <MenuItem value="ENTRADA">Entrada</MenuItem>
             <MenuItem value="SAIDA">Saída</MenuItem>
+            <MenuItem value="RETORNO">Retorno</MenuItem>
+          </Select>
+        </FormControl>
+        <FormControl className={styles.campoTipo}>
+          <InputLabel id="status-label">Status</InputLabel>
+          <Select
+            labelId="status-label"
+            label="Status"
+            value={status}
+            onChange={handleStatusChange}
+          >
+            <MenuItem value="TODOS">Todos</MenuItem>
+            <MenuItem value="PENDENTE_RETORNO">Pendente Retorno</MenuItem>
+            <MenuItem value="SEM_RETORNO">Sem Retorno</MenuItem>
+            <MenuItem value="RETORNADO">Retornado</MenuItem>
           </Select>
         </FormControl>
         <TextField
-          label="Matrícula"
-          value={matricula}
+          label="Funcionário"
+          placeholder="Nome ou matrícula"
+          value={funcionario}
           onChange={(e) => {
-            setMatricula(e.target.value);
+            setFuncionario(e.target.value);
             setPagina(1);
           }}
         />
@@ -215,15 +284,18 @@ export function Historico() {
       <TableContainer
         component={Paper}
         className={`${styles.tabelaContainer} ${styles.escondeImpressao}`}
+        data-testid="tabela-tela"
       >
         <Table>
           <TableHead>
             <TableRow>
               <TableCell>Data/Hora</TableCell>
               <TableCell>Tipo</TableCell>
+              <TableCell>Status</TableCell>
               <TableCell>Item</TableCell>
               <TableCell>Projeto</TableCell>
-              <TableCell>Matrícula</TableCell>
+              <TableCell>Funcionário</TableCell>
+              <TableCell>Almoxarife</TableCell>
               <TableCell>Quantidade</TableCell>
               <TableCell>Observação</TableCell>
             </TableRow>
@@ -231,7 +303,7 @@ export function Historico() {
           <TableBody>
             {itensDaPagina.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className={styles.semRegistros}>
+                <TableCell colSpan={9} className={styles.semRegistros}>
                   Nenhuma movimentação encontrada.
                 </TableCell>
               </TableRow>
@@ -254,15 +326,21 @@ export function Historico() {
 
       {/* Tabela completa (sem paginação) usada apenas na versão impressa/PDF, para que o
           download inclua todos os resultados filtrados, não só a página atual na tela. */}
-      <TableContainer component={Paper} className={styles.somenteImpressao}>
+      <TableContainer
+        component={Paper}
+        className={styles.somenteImpressao}
+        data-testid="tabela-impressao"
+      >
         <Table>
           <TableHead>
             <TableRow>
               <TableCell>Data/Hora</TableCell>
               <TableCell>Tipo</TableCell>
+              <TableCell>Status</TableCell>
               <TableCell>Item</TableCell>
               <TableCell>Projeto</TableCell>
-              <TableCell>Matrícula</TableCell>
+              <TableCell>Funcionário</TableCell>
+              <TableCell>Almoxarife</TableCell>
               <TableCell>Quantidade</TableCell>
               <TableCell>Observação</TableCell>
             </TableRow>
@@ -270,7 +348,7 @@ export function Historico() {
           <TableBody>
             {movimentacoes.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className={styles.semRegistros}>
+                <TableCell colSpan={9} className={styles.semRegistros}>
                   Nenhuma movimentação encontrada.
                 </TableCell>
               </TableRow>

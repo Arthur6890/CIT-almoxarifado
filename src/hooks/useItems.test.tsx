@@ -2,14 +2,19 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "../lib/db";
-import { limparBanco } from "../test/dbHelpers";
+import { criarFuncionarioDeTeste, limparBanco } from "../test/dbHelpers";
 import {
+  useContagemRetornosPendentes,
+  useFuncionarios,
   useHistorico,
   useItensPorProjeto,
   useNomesItensDoProjeto,
   useProjetos,
+  useQuantidadesPendentesPorProjeto,
+  useRetornosPendentes,
   useUltimasMovimentacoes,
 } from "./useItems";
+import { registrarSaida } from "../lib/repository";
 
 beforeEach(async () => {
   await limparBanco();
@@ -128,10 +133,35 @@ describe("useNomesItensDoProjeto", () => {
   });
 });
 
+describe("useFuncionarios", () => {
+  it("retorna todos os funcionários ordenados por nome", async () => {
+    await criarFuncionarioDeTeste({ nome: "Zeca" });
+    await criarFuncionarioDeTeste({ nome: "Ana" });
+
+    const { result } = renderHook(() => useFuncionarios());
+
+    await waitFor(() => {
+      expect(result.current.map((f) => f.nome)).toEqual(["Ana", "Zeca"]);
+    });
+  });
+
+  it("filtra só os almoxarifes quando apenasAlmoxarifes é true", async () => {
+    await criarFuncionarioDeTeste({ nome: "Comum", eh_almoxarife: false });
+    await criarFuncionarioDeTeste({ nome: "Chefe", eh_almoxarife: true });
+
+    const { result } = renderHook(() => useFuncionarios(true));
+
+    await waitFor(() => {
+      expect(result.current.map((f) => f.nome)).toEqual(["Chefe"]);
+    });
+  });
+});
+
 describe("useUltimasMovimentacoes", () => {
   it("respeita o limite e retorna as mais recentes primeiro", async () => {
     const projetoId = await db.projetos.add({ nome: "Projeto" });
     const itemId = await criarItemDeTeste(projetoId);
+    const funcionarioId = await criarFuncionarioDeTeste();
 
     await db.movimentacoes.bulkAdd(
       Array.from({ length: 3 }, (_, indice) => ({
@@ -139,7 +169,8 @@ describe("useUltimasMovimentacoes", () => {
         tipo: "ENTRADA" as const,
         quantidade_antes: indice,
         quantidade_depois: indice + 1,
-        matricula_usuario: "111",
+        funcionario_id: funcionarioId,
+        almoxarife_id: funcionarioId,
         created_at: new Date(2026, 0, indice + 1),
       })),
     );
@@ -158,13 +189,16 @@ describe("useHistorico", () => {
   it("retorna as movimentações que atendem aos filtros informados", async () => {
     const projetoId = await db.projetos.add({ nome: "Projeto" });
     const itemId = await criarItemDeTeste(projetoId);
+    const funcionarioId = await criarFuncionarioDeTeste({ nome: "Fulano" });
+
     await db.movimentacoes.bulkAdd([
       {
         item_id: itemId,
         tipo: "ENTRADA",
         quantidade_antes: 0,
         quantidade_depois: 1,
-        matricula_usuario: "111",
+        funcionario_id: funcionarioId,
+        almoxarife_id: funcionarioId,
         created_at: new Date(2026, 0, 1),
       },
       {
@@ -172,7 +206,9 @@ describe("useHistorico", () => {
         tipo: "SAIDA",
         quantidade_antes: 1,
         quantidade_depois: 0,
-        matricula_usuario: "222",
+        funcionario_id: funcionarioId,
+        almoxarife_id: funcionarioId,
+        status: "SEM_RETORNO",
         created_at: new Date(2026, 0, 2),
       },
     ]);
@@ -181,20 +217,23 @@ describe("useHistorico", () => {
 
     await waitFor(() => {
       expect(result.current).toHaveLength(1);
-      expect(result.current[0].matricula_usuario).toBe("222");
+      expect(result.current[0].tipo).toBe("SAIDA");
     });
   });
 
   it("reconsulta quando os filtros mudam", async () => {
     const projetoId = await db.projetos.add({ nome: "Projeto" });
     const itemId = await criarItemDeTeste(projetoId);
+    const funcionarioId = await criarFuncionarioDeTeste();
+
     await db.movimentacoes.bulkAdd([
       {
         item_id: itemId,
         tipo: "ENTRADA",
         quantidade_antes: 0,
         quantidade_depois: 1,
-        matricula_usuario: "111",
+        funcionario_id: funcionarioId,
+        almoxarife_id: funcionarioId,
         created_at: new Date(2026, 0, 1),
       },
       {
@@ -202,7 +241,9 @@ describe("useHistorico", () => {
         tipo: "SAIDA",
         quantidade_antes: 1,
         quantidade_depois: 0,
-        matricula_usuario: "222",
+        funcionario_id: funcionarioId,
+        almoxarife_id: funcionarioId,
+        status: "SEM_RETORNO",
         created_at: new Date(2026, 0, 2),
       },
     ]);
@@ -222,6 +263,42 @@ describe("useHistorico", () => {
     await waitFor(() => {
       expect(result.current).toHaveLength(1);
       expect(result.current[0].tipo).toBe("SAIDA");
+    });
+  });
+});
+
+describe("useQuantidadesPendentesPorProjeto / useRetornosPendentes / useContagemRetornosPendentes", () => {
+  it("refletem uma saída com retorno pendente e zeram depois do retorno registrado", async () => {
+    const projetoId = await db.projetos.add({ nome: "Projeto" });
+    const itemId = await criarItemDeTeste(projetoId, { quantidade: 3 });
+    const funcionarioId = await criarFuncionarioDeTeste({ nome: "Fulano" });
+    const almoxarifeId = await criarFuncionarioDeTeste({ nome: "Chefe", eh_almoxarife: true });
+
+    const mapa = renderHook(() => useQuantidadesPendentesPorProjeto(projetoId));
+    const pendentes = renderHook(() => useRetornosPendentes());
+    const contagem = renderHook(() => useContagemRetornosPendentes());
+
+    await waitFor(() => expect(contagem.result.current).toBe(0));
+
+    await act(async () => {
+      await registrarSaida({
+        nomeItem: "Item",
+        projetoId,
+        quantidade: 2,
+        funcionarioId,
+        almoxarifeId,
+        comRetorno: true,
+        organizador: "1",
+        setor: "A",
+        andar: "P1",
+        prateleira: "1",
+      });
+    });
+
+    await waitFor(() => {
+      expect(mapa.result.current.get(itemId)).toBe(2);
+      expect(pendentes.result.current).toHaveLength(1);
+      expect(contagem.result.current).toBe(1);
     });
   });
 });

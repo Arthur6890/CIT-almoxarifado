@@ -1,0 +1,75 @@
+@use "./variables" as vars;
+
+.container {
+  min-height: 100vh;
+  background-color: vars.$color-bg;
+  padding: vars.$spacing-lg;
+}
+
+.titulo {
+  color: vars.$color-blue-dark !important;
+  font-weight: 700 !important;
+  margin-bottom: vars.$spacing-lg !important;
+  text-align: center;
+}
+
+.formulario {
+  background-color: vars.$color-white;
+  border-radius: vars.$radius-lg;
+  padding: vars.$spacing-lg;
+  box-shadow: vars.$shadow-sm;
+  margin-bottom: vars.$spacing-lg;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: vars.$spacing-md;
+}
+
+.campoNome {
+  flex: 2 1 260px;
+}
+
+.campoMatricula {
+  flex: 1 1 160px;
+}
+
+.campoAlmoxarife {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.acoesFormulario {
+  display: flex;
+  gap: vars.$spacing-sm;
+  flex: 1 1 100%;
+  justify-content: flex-end;
+}
+
+.tabelaContainer {
+  border-radius: vars.$radius-lg !important;
+  box-shadow: vars.$shadow-sm !important;
+}
+
+.semRegistros {
+  text-align: center !important;
+  color: vars.$color-secondary !important;
+  padding: vars.$spacing-xl 0 !important;
+}
+
+.chipAlmoxarife {
+  background-color: vars.$color-blue-vibrant !important;
+  color: vars.$color-white !important;
+  font-weight: 600 !important;
+}
+
+.chipBolsista {
+  background-color: vars.$color-secondary !important;
+  color: vars.$color-white !important;
+  font-weight: 600 !important;
+}
+
+.acoesLinha {
+  display: flex;
+  gap: vars.$spacing-xs;
+}

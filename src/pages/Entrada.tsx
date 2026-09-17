@@ -5,6 +5,7 @@ import styles from "../styles/Entrada.module.scss";
 import { CustomButton } from "../components/button";
 import { ProjetoAutocomplete } from "../components/projeto-autocomplete";
 import { ItemAutocomplete } from "../components/item-autocomplete";
+import { FuncionarioAutocomplete } from "../components/funcionario-autocomplete";
 import { CampoComTooltip } from "../components/campo-tooltip";
 import { useItensPorProjeto, useNomesItensDoProjeto, useProjetos } from "../hooks/useItems";
 import { registrarEntrada, resolverIdProjeto } from "../lib/repository";
@@ -16,7 +17,8 @@ interface Feedback {
 }
 
 export function Entrada() {
-  const [matricula, setMatricula] = useState("");
+  const [funcionarioId, setFuncionarioId] = useState<number | "">("");
+  const [almoxarifeId, setAlmoxarifeId] = useState<number | "">("");
   const [projetoSelecionado, setProjetoSelecionado] =
     useState<SelecaoComOpcaoNova | null>(null);
   const [itemSelecionado, setItemSelecionado] =
@@ -87,7 +89,8 @@ export function Entrada() {
   const camposLocalizacaoEditaveis = !itemExistente;
 
   const podeRegistrar =
-    matricula.trim().length > 0 &&
+    funcionarioId !== "" &&
+    almoxarifeId !== "" &&
     !!projetoSelecionado?.nome.trim() &&
     !!itemSelecionado?.nome.trim() &&
     organizador.trim().length > 0 &&
@@ -118,7 +121,8 @@ export function Entrada() {
   }
 
   async function handleRegistrar() {
-    if (!projetoSelecionado || !itemSelecionado) return;
+    if (!projetoSelecionado || !itemSelecionado || funcionarioId === "" || almoxarifeId === "")
+      return;
     setEnviando(true);
     try {
       const projetoId = await resolverIdProjeto(projetoSelecionado);
@@ -130,7 +134,8 @@ export function Entrada() {
         setor: setor.trim(),
         andar: andar.trim(),
         prateleira: prateleira.trim(),
-        matricula: matricula.trim(),
+        funcionarioId,
+        almoxarifeId,
         observacao: observacao.trim() || undefined,
       });
       setFeedback({
@@ -164,15 +169,18 @@ export function Entrada() {
       </Typography>
 
       <div className={styles.formulario}>
-        <CampoComTooltip>
-          <TextField
-            label="Matrícula"
-            value={matricula}
-            onChange={(e) => setMatricula(e.target.value)}
-            required
-            fullWidth
-          />
-        </CampoComTooltip>
+        <FuncionarioAutocomplete
+          label="Matrícula"
+          value={funcionarioId}
+          onChange={setFuncionarioId}
+        />
+
+        <FuncionarioAutocomplete
+          label="Almoxarife responsável"
+          value={almoxarifeId}
+          onChange={setAlmoxarifeId}
+          apenasAlmoxarifes
+        />
 
         <ProjetoAutocomplete
           value={projetoSelecionado}
@@ -190,10 +198,13 @@ export function Entrada() {
           <TextField
             label="Organizador do item"
             value={organizador}
-            onChange={(e) => setOrganizador(e.target.value)}
+            onChange={(e) => setOrganizador(e.target.value.replace(/\D/g, ""))}
             required
             fullWidth
-            slotProps={{ input: { readOnly: !camposLocalizacaoEditaveis } }}
+            slotProps={{
+              input: { readOnly: !camposLocalizacaoEditaveis },
+              htmlInput: { inputMode: "numeric", pattern: "[0-9]*" },
+            }}
           />
         </CampoComTooltip>
         <CampoComTooltip>
@@ -220,10 +231,13 @@ export function Entrada() {
           <TextField
             label="Prateleira do item"
             value={prateleira}
-            onChange={(e) => setPrateleira(e.target.value)}
+            onChange={(e) => setPrateleira(e.target.value.replace(/\D/g, ""))}
             required
             fullWidth
-            slotProps={{ input: { readOnly: !camposLocalizacaoEditaveis } }}
+            slotProps={{
+              input: { readOnly: !camposLocalizacaoEditaveis },
+              htmlInput: { inputMode: "numeric", pattern: "[0-9]*" },
+            }}
           />
         </CampoComTooltip>
         <CampoComTooltip>

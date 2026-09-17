@@ -1,20 +1,25 @@
 // src/lib/types.ts
-export type { Projeto, Item, Movimentacao } from "./db";
-import type { Movimentacao } from "./db";
+export type { Projeto, Item, Movimentacao, Funcionario, TipoMovimentacao, StatusSaida } from "./db";
+import type { Movimentacao, StatusSaida, TipoMovimentacao } from "./db";
 
 export interface MovimentacaoComItem extends Movimentacao {
   itemNome: string;
   projetoId?: number;
   projetoNome: string;
+  funcionarioNome: string;
+  almoxarifeNome: string;
 }
 
-export type TipoMovimentacaoFiltro = "TODOS" | "ENTRADA" | "SAIDA";
+export type TipoMovimentacaoFiltro = "TODOS" | TipoMovimentacao;
+export type StatusSaidaFiltro = "TODOS" | StatusSaida;
 
 export interface HistoricoFiltros {
   dataInicial?: string; // formato yyyy-mm-dd
   dataFinal?: string; // formato yyyy-mm-dd
   tipo?: TipoMovimentacaoFiltro;
-  matricula?: string;
+  status?: StatusSaidaFiltro;
+  // Busca por nome ou matrícula do funcionário responsável pela movimentação.
+  funcionario?: string;
   projetoId?: number | "";
 }
 

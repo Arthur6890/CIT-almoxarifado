@@ -53,6 +53,30 @@
   font-weight: 600 !important;
 }
 
+.chipRetorno {
+  background-color: vars.$color-blue-vibrant !important;
+  color: vars.$color-white !important;
+  font-weight: 600 !important;
+}
+
+.statusPendente {
+  background-color: vars.$color-warning !important;
+  color: vars.$color-white !important;
+  font-weight: 600 !important;
+}
+
+.statusSemRetorno {
+  background-color: vars.$color-secondary !important;
+  color: vars.$color-white !important;
+  font-weight: 600 !important;
+}
+
+.statusRetornado {
+  background-color: vars.$color-success !important;
+  color: vars.$color-white !important;
+  font-weight: 600 !important;
+}
+
 .paginacao {
   display: flex;
   justify-content: center;

@@ -1,10 +1,21 @@
 import { useState } from "react";
-import { Alert, Snackbar, TextField, Typography } from "@mui/material";
+import {
+  Alert,
+  FormControl,
+  FormControlLabel,
+  FormLabel,
+  Radio,
+  RadioGroup,
+  Snackbar,
+  TextField,
+  Typography,
+} from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import styles from "../styles/Saida.module.scss";
 import { CustomButton } from "../components/button";
 import { ProjetoAutocomplete } from "../components/projeto-autocomplete";
 import { ItemAutocomplete } from "../components/item-autocomplete";
+import { FuncionarioAutocomplete } from "../components/funcionario-autocomplete";
 import { CampoComTooltip } from "../components/campo-tooltip";
 import { useItensPorProjeto, useNomesItensDoProjeto, useProjetos } from "../hooks/useItems";
 import { registrarSaida, resolverIdProjeto } from "../lib/repository";
@@ -15,13 +26,17 @@ interface Feedback {
   mensagem: string;
 }
 
+type OpcaoRetorno = "SEM_RETORNO" | "PENDENTE_RETORNO";
+
 export function Saida() {
-  const [matricula, setMatricula] = useState("");
+  const [funcionarioId, setFuncionarioId] = useState<number | "">("");
+  const [almoxarifeId, setAlmoxarifeId] = useState<number | "">("");
   const [projetoSelecionado, setProjetoSelecionado] =
     useState<SelecaoComOpcaoNova | null>(null);
   const [itemSelecionado, setItemSelecionado] =
     useState<SelecaoComOpcaoNova | null>(null);
   const [quantidade, setQuantidade] = useState("1");
+  const [opcaoRetorno, setOpcaoRetorno] = useState<OpcaoRetorno>("SEM_RETORNO");
   const [observacao, setObservacao] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
@@ -71,7 +86,8 @@ export function Saida() {
   const itemInvalido = buscouItem && !itemExistente;
 
   const podeRegistrar =
-    matricula.trim().length > 0 &&
+    funcionarioId !== "" &&
+    almoxarifeId !== "" &&
     !!projetoSelecionado?.nome.trim() &&
     !!itemSelecionado?.nome.trim() &&
     !itemInvalido &&
@@ -91,6 +107,7 @@ export function Saida() {
 
   async function handleRegistrar() {
     if (!projetoSelecionado || !itemSelecionado || !itemExistente) return;
+    if (funcionarioId === "" || almoxarifeId === "") return;
     setEnviando(true);
     try {
       const projetoId = await resolverIdProjeto(projetoSelecionado);
@@ -102,7 +119,9 @@ export function Saida() {
         setor: setor.trim(),
         andar: andar.trim(),
         prateleira: prateleira.trim(),
-        matricula: matricula.trim(),
+        funcionarioId,
+        almoxarifeId,
+        comRetorno: opcaoRetorno === "PENDENTE_RETORNO",
         observacao: observacao.trim() || undefined,
       });
       setFeedback({
@@ -111,6 +130,7 @@ export function Saida() {
       });
       setItemSelecionado(null);
       setQuantidade("1");
+      setOpcaoRetorno("SEM_RETORNO");
       setObservacao("");
     } catch (erro) {
       setFeedback({
@@ -130,15 +150,18 @@ export function Saida() {
       </Typography>
 
       <div className={styles.formulario}>
-        <CampoComTooltip>
-          <TextField
-            label="Matrícula"
-            value={matricula}
-            onChange={(e) => setMatricula(e.target.value)}
-            required
-            fullWidth
-          />
-        </CampoComTooltip>
+        <FuncionarioAutocomplete
+          label="Matrícula"
+          value={funcionarioId}
+          onChange={setFuncionarioId}
+        />
+
+        <FuncionarioAutocomplete
+          label="Almoxarife responsável"
+          value={almoxarifeId}
+          onChange={setAlmoxarifeId}
+          apenasAlmoxarifes
+        />
 
         <ProjetoAutocomplete
           value={projetoSelecionado}
@@ -206,6 +229,21 @@ export function Saida() {
             }
             slotProps={{ htmlInput: { min: 1, step: 1 } }}
           />
+        </CampoComTooltip>
+
+        <CampoComTooltip tooltip="Marque 'Com retorno' quando o item deve voltar ao estoque depois (ex: ferramenta emprestada). Marque 'Sem retorno' para uma saída definitiva.">
+          <FormControl>
+            <FormLabel id="retorno-label">Retorno do item</FormLabel>
+            <RadioGroup
+              row
+              aria-labelledby="retorno-label"
+              value={opcaoRetorno}
+              onChange={(e) => setOpcaoRetorno(e.target.value as OpcaoRetorno)}
+            >
+              <FormControlLabel value="SEM_RETORNO" control={<Radio />} label="Sem retorno" />
+              <FormControlLabel value="PENDENTE_RETORNO" control={<Radio />} label="Com retorno" />
+            </RadioGroup>
+          </FormControl>
         </CampoComTooltip>
 
         {buscouItem &&

@@ -13,6 +13,12 @@
   text-align: center;
 }
 
+.acoesTopo {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: vars.$spacing-md;
+}
+
 .filtros {
   display: flex;
   flex-wrap: wrap;
@@ -84,4 +90,58 @@
   gap: vars.$spacing-xs vars.$spacing-sm;
   font-size: 0.875rem;
   color: vars.$color-secondary-dark;
+}
+
+.pendente {
+  display: inline-block;
+  margin-top: vars.$spacing-sm;
+  padding: 2px vars.$spacing-sm;
+  border-radius: vars.$radius-sm;
+  background-color: vars.$color-warning !important;
+  color: vars.$color-white !important;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+}
+
+// Conteúdo exclusivo da versão impressa/PDF do extrato (mesma técnica usada no Histórico).
+.somenteImpressao {
+  display: none;
+}
+
+.tituloImpressao {
+  display: none;
+}
+
+@media print {
+  .container {
+    background-color: vars.$color-white;
+    padding: 0;
+  }
+
+  .escondeImpressao {
+    display: none !important;
+  }
+
+  .somenteImpressao {
+    display: block !important;
+  }
+
+  .tituloImpressao {
+    display: block !important;
+    margin-bottom: vars.$spacing-md;
+    color: vars.$color-text;
+  }
+
+  .grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .card {
+    box-shadow: none !important;
+    border: 1px solid #e0e0e0;
+    break-inside: avoid;
+  }
 }

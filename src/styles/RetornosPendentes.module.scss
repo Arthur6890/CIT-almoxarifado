@@ -1,0 +1,57 @@
+@use "./variables" as vars;
+
+.container {
+  min-height: 100vh;
+  background-color: vars.$color-bg;
+  padding: vars.$spacing-lg;
+}
+
+.titulo {
+  color: vars.$color-blue-dark !important;
+  font-weight: 700 !important;
+  margin-bottom: vars.$spacing-lg !important;
+  text-align: center;
+}
+
+.mensagemVazia {
+  text-align: center;
+  color: vars.$color-secondary;
+  padding: vars.$spacing-xl 0;
+}
+
+.lista {
+  display: flex;
+  flex-direction: column;
+  gap: vars.$spacing-md;
+}
+
+.card {
+  background-color: vars.$color-white;
+  border-radius: vars.$radius-lg;
+  padding: vars.$spacing-md vars.$spacing-lg;
+  box-shadow: vars.$shadow-sm;
+  border-left: 4px solid vars.$color-warning;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: vars.$spacing-md;
+  flex-wrap: wrap;
+}
+
+.cardNome {
+  font-weight: 700 !important;
+  color: vars.$color-blue-dark;
+}
+
+.cardDetalhes {
+  font-size: 0.875rem;
+  color: vars.$color-secondary-dark;
+}
+
+.dialogFormulario {
+  display: flex;
+  flex-direction: column;
+  gap: vars.$spacing-md;
+  min-width: 320px;
+  padding-top: vars.$spacing-sm;
+}

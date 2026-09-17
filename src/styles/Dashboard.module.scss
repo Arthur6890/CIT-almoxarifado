@@ -98,3 +98,33 @@
   font-weight: 600 !important;
   flex-shrink: 0;
 }
+
+.chipRetorno {
+  background-color: vars.$color-blue-vibrant !important;
+  color: vars.$color-white !important;
+  font-weight: 600 !important;
+  flex-shrink: 0;
+}
+
+.iconeRetorno {
+  color: vars.$color-blue-vibrant;
+  flex-shrink: 0;
+}
+
+.alertaPendentes {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: vars.$spacing-md;
+  background-color: vars.$color-warning !important;
+  color: vars.$color-white !important;
+  border-radius: vars.$radius-lg;
+  padding: vars.$spacing-md vars.$spacing-lg;
+  margin-bottom: vars.$spacing-lg;
+  cursor: pointer;
+  border: none;
+  width: 100%;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+}
